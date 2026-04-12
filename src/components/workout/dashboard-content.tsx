@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ALL_SPLITS, AFFIRMATIONS, SPLIT_ICONS, SPLIT_IMAGES } from "@/lib/constants";
+import { ALL_SPLITS, SPLIT_ICONS, SPLIT_IMAGES } from "@/lib/constants";
 import type { WorkoutSplit } from "@/lib/types";
 import type { DailyStep } from "@/actions/health";
 import { StepsCard } from "@/components/workout/steps-card";
@@ -48,11 +48,6 @@ export function DashboardContent({
   const [selectedSplit, setSelectedSplit] = useState<WorkoutSplit>(suggestedSplit);
 
   const greeting = getGreeting();
-  const affirmation = useMemo(
-    () => AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)],
-    []
-  );
-
   const displayName =
     selectedSplit === "Upper"
       ? "Upper Body"
