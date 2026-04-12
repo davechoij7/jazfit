@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,17 @@ import { deleteWorkoutSession } from "@/actions/workout";
 
 export function DeleteWorkoutButton({ sessionId }: { sessionId: string }) {
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
-  function handleDelete() {
-    startTransition(async () => {
+  async function handleDelete() {
+    setIsPending(true);
+    try {
       await deleteWorkoutSession(sessionId);
       router.push("/history");
-      router.refresh();
-    });
+    } catch {
+      setIsPending(false);
+    }
   }
 
   return (
