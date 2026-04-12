@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { BodyMeasurement } from "@/lib/types";
 
 interface Props {
@@ -142,6 +143,16 @@ export function BodyMeasurementsCard({ measurements }: Props) {
             </p>
           )}
         </div>
+      </div>
+
+      <div className="mt-4 text-right">
+        <Link
+          href="/profile/measurements"
+          className="text-xs font-medium"
+          style={{ color: "#C4808E" }}
+        >
+          View all →
+        </Link>
       </div>
     </div>
   );
