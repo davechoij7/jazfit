@@ -23,7 +23,7 @@ export function DeleteWorkoutButton({ sessionId }: { sessionId: string }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="p-2 -mr-2 text-text-dim active:text-error transition-colors touch-manipulation"
+        className="p-2 -mr-2 text-text-muted active:text-error transition-colors touch-manipulation"
         aria-label="Delete workout"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
