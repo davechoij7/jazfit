@@ -26,12 +26,6 @@
 
 html {
   background-color: #FBF0F0;
-  background-image:
-    linear-gradient(rgba(251, 240, 240, 0.45), rgba(251, 240, 240, 0.45)),
-    url('/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   color-scheme: light;
 }
 

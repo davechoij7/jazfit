@@ -49,6 +49,16 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="min-h-dvh flex flex-col font-sans">
+        <div
+          aria-hidden="true"
+          className="fixed inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(251,240,240,0.45),rgba(251,240,240,0.45)),url('/background.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
         {children}
       </body>
     </html>
