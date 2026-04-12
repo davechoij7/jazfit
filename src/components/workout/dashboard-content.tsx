@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ALL_SPLITS, AFFIRMATIONS } from "@/lib/constants";
+import { ALL_SPLITS, AFFIRMATIONS, SPLIT_ICONS } from "@/lib/constants";
 import type { WorkoutSplit } from "@/lib/types";
 import type { DailyStep } from "@/actions/health";
 import { StepsCard } from "@/components/workout/steps-card";
@@ -17,14 +17,6 @@ interface DashboardContentProps {
   recentSessions: { date: string; workout_type: string | null }[];
 }
 
-const SPLIT_ICONS: Record<WorkoutSplit, string> = {
-  Upper: "🏋️‍♀️",
-  Lower: "🦵",
-  Yoga: "🧘‍♀️",
-  Barre: "🩰",
-  Walk: "🚶‍♀️",
-  Run: "🏃‍♀️",
-};
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -123,7 +115,7 @@ export function DashboardContent({
                 key={split}
                 type="button"
                 onClick={() => setSelectedSplit(split)}
-                className="px-3 py-1.5 rounded-full text-sm whitespace-nowrap min-h-[36px] shrink-0"
+                className="px-3 py-1.5 rounded-full text-sm whitespace-nowrap min-h-[48px] shrink-0"
                 style={
                   isActive
                     ? {
@@ -160,7 +152,7 @@ export function DashboardContent({
             >
               <Image
                 src={`/splits/${selectedSplit.toLowerCase()}.png`}
-                alt={SPLIT_ICONS[selectedSplit] ?? selectedSplit}
+                alt={displayName}
                 width={80}
                 height={80}
                 className="object-contain"

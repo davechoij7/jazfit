@@ -1,15 +1,9 @@
 "use client";
 
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+import { SPLIT_ICONS } from "@/lib/constants";
+import type { WorkoutSplit } from "@/lib/types";
 
-const SPLIT_ICONS: Record<string, string> = {
-  Upper: "🏋️‍♀️",
-  Lower: "🦵",
-  Yoga: "🧘‍♀️",
-  Barre: "🩰",
-  Walk: "🚶‍♀️",
-  Run: "🏃‍♀️",
-};
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 interface WorkoutHistoryRowProps {
   sessions: { date: string; workout_type: string | null }[];
@@ -21,7 +15,10 @@ function buildWeekDays(): string[] {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    days.push(d.toISOString().split("T")[0]);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    days.push(`${y}-${m}-${day}`);
   }
   return days;
 }
@@ -66,7 +63,7 @@ export function WorkoutHistoryRow({ sessions }: WorkoutHistoryRowProps) {
         {weekDays.map((date) => {
           const workoutType = sessionByDate.get(date) ?? null;
           const isToday = date === todayDate;
-          const emoji = workoutType ? (SPLIT_ICONS[workoutType] ?? "💪") : null;
+          const emoji = workoutType ? (SPLIT_ICONS[workoutType as WorkoutSplit] ?? "💪") : null;
 
           return (
             <div key={date} className="flex-1 flex flex-col items-center gap-1">

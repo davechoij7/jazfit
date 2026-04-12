@@ -130,3 +130,12 @@ export const AFFIRMATIONS = [
   "Tu cuerpo recuerda cada esfuerzo.",
   "Eres más fuerte de lo que crees.",
 ];
+
+export const SPLIT_ICONS: Record<WorkoutSplit, string> = {
+  Upper: "🏋️‍♀️",
+  Lower: "🦵",
+  Yoga:  "🧘‍♀️",
+  Barre: "🩰",
+  Walk:  "🚶‍♀️",
+  Run:   "🏃‍♀️",
+};
