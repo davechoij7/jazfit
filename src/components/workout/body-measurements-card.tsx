@@ -159,9 +159,8 @@ export function BodyMeasurementsCard({ measurements }: Props) {
 }
 
 function BodySilhouette() {
-  // A minimal female body silhouette as inline SVG paths
+  // Female body silhouette — hourglass torso, separated legs, natural arms
   // viewBox: 0 0 80 200 — head at top, feet at bottom
-  // Drawn as a single continuous fill shape with indicator dots
   return (
     <svg
       width="80"
@@ -172,61 +171,61 @@ function BodySilhouette() {
       aria-hidden="true"
     >
       {/* Head */}
-      <ellipse cx="40" cy="16" rx="11" ry="13" fill="#E8A0AD" opacity="0.7" />
+      <ellipse cx="40" cy="14" rx="11" ry="13" fill="#E8A0AD" opacity="0.75" />
 
       {/* Neck */}
-      <rect x="36" y="27" width="8" height="8" rx="3" fill="#E8A0AD" opacity="0.7" />
+      <rect x="36" y="25" width="8" height="10" rx="3" fill="#E8A0AD" opacity="0.75" />
 
-      {/* Torso — shoulders to hips */}
+      {/* Torso — shoulders (56px) → waist (30px) → hips (58px) */}
       <path
-        d="M18 35 Q14 40 15 56 Q16 68 22 76 Q26 82 28 90 Q30 98 30 104 L50 104 Q50 98 52 90 Q54 82 58 76 Q64 68 65 56 Q66 40 62 35 Q56 32 40 31 Q24 32 18 35Z"
+        d="M12 37 Q8 58 25 80 Q14 96 11 110 L69 110 Q66 96 55 80 Q72 58 68 37 Q56 28 40 26 Q24 28 12 37Z"
+        fill="#E8A0AD"
+        opacity="0.75"
+      />
+
+      {/* Left arm */}
+      <path
+        d="M13 40 Q5 62 7 80 Q7 92 9 100 Q12 104 16 100 Q17 92 16 78 Q18 58 20 43Z"
         fill="#E8A0AD"
         opacity="0.7"
       />
 
-      {/* Left arm (viewer's right) */}
+      {/* Right arm */}
       <path
-        d="M18 37 Q10 44 8 56 Q7 64 10 72 Q12 76 14 72 Q15 66 16 58 Q18 48 22 40Z"
-        fill="#E8A0AD"
-        opacity="0.65"
-      />
-
-      {/* Right arm (viewer's left) */}
-      <path
-        d="M62 37 Q70 44 72 56 Q73 64 70 72 Q68 76 66 72 Q65 66 64 58 Q62 48 58 40Z"
-        fill="#E8A0AD"
-        opacity="0.65"
-      />
-
-      {/* Left leg */}
-      <path
-        d="M30 104 Q28 120 27 136 Q26 152 27 168 Q28 180 32 188 Q35 194 38 188 Q40 180 40 168 L40 104Z"
+        d="M67 40 Q75 62 73 80 Q73 92 71 100 Q68 104 64 100 Q63 92 64 78 Q62 58 60 43Z"
         fill="#E8A0AD"
         opacity="0.7"
       />
 
-      {/* Right leg */}
+      {/* Left leg — outer hip x=11, inner x=34, with natural taper */}
       <path
-        d="M50 104 Q52 120 53 136 Q54 152 53 168 Q52 180 48 188 Q45 194 42 188 Q40 180 40 168 L40 104Z"
+        d="M11 110 Q10 140 12 165 Q13 178 15 190 Q18 196 22 196 Q26 196 28 190 Q30 178 31 165 Q33 140 34 110Z"
         fill="#E8A0AD"
-        opacity="0.7"
+        opacity="0.75"
+      />
+
+      {/* Right leg — inner x=46, outer hip x=69 */}
+      <path
+        d="M69 110 Q70 140 68 165 Q67 178 65 190 Q62 196 58 196 Q54 196 52 190 Q50 178 49 165 Q47 140 46 110Z"
+        fill="#E8A0AD"
+        opacity="0.75"
       />
 
       {/* Measurement indicator dots */}
       {/* Chest */}
-      <circle cx="40" cy="48" r="2.5" fill="#C4808E" />
+      <circle cx="40" cy="50" r="2.5" fill="#C4808E" />
       {/* Waist */}
-      <circle cx="40" cy="78" r="2.5" fill="#C4808E" />
+      <circle cx="40" cy="80" r="2.5" fill="#C4808E" />
       {/* Hips */}
-      <circle cx="40" cy="100" r="2.5" fill="#C4808E" />
+      <circle cx="40" cy="106" r="2.5" fill="#C4808E" />
       {/* Left arm */}
-      <circle cx="11" cy="58" r="2" fill="#7A3347" opacity="0.8" />
+      <circle cx="10" cy="62" r="2" fill="#7A3347" opacity="0.8" />
       {/* Right arm */}
-      <circle cx="69" cy="58" r="2" fill="#7A3347" opacity="0.8" />
+      <circle cx="70" cy="62" r="2" fill="#7A3347" opacity="0.8" />
       {/* Left thigh */}
-      <circle cx="29" cy="130" r="2" fill="#7A3347" opacity="0.8" />
+      <circle cx="21" cy="132" r="2" fill="#7A3347" opacity="0.8" />
       {/* Right thigh */}
-      <circle cx="51" cy="130" r="2" fill="#7A3347" opacity="0.8" />
+      <circle cx="59" cy="132" r="2" fill="#7A3347" opacity="0.8" />
     </svg>
   );
 }
