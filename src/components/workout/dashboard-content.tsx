@@ -86,7 +86,7 @@ export function DashboardContent({
         <h1 className="text-2xl font-display text-text-primary">
           {greeting}, Jazmin
         </h1>
-        <p className="text-sm text-text-muted italic mt-1">{affirmation}</p>
+        <p className="text-sm text-text-muted italic mt-1">Dental Floss by August!</p>
       </div>
 
       {/* Hero card */}
