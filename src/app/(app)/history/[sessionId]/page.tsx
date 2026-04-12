@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WorkoutSummary } from "@/components/workout/workout-summary";
+import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
 import { MUSCLE_GROUP_COLORS, EQUIPMENT_LABELS } from "@/lib/constants";
 import type { MuscleGroup, EquipmentType } from "@/lib/types";
 
@@ -56,15 +57,18 @@ export default async function SessionDetailPage({ params }: Props) {
   return (
     <div className="px-4 pt-6 pb-4 space-y-6">
       {/* Header */}
-      <div>
-        <p className="text-sm text-text-muted">{dateStr}</p>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {session.muscle_groups_focus.map((g: string) => (
-            <Badge key={g} colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}>
-              {g}
-            </Badge>
-          ))}
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm text-text-muted">{dateStr}</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {session.muscle_groups_focus.map((g: string) => (
+              <Badge key={g} colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}>
+                {g}
+              </Badge>
+            ))}
+          </div>
         </div>
+        <DeleteWorkoutButton sessionId={sessionId} />
       </div>
 
       {/* Summary stats */}
