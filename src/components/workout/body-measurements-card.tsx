@@ -9,7 +9,6 @@ interface Props {
 type MeasurementKey =
   | "waist"
   | "hips"
-  | "chest"
   | "arms_left"
   | "arms_right"
   | "thighs_left"
@@ -38,12 +37,6 @@ export function BodyMeasurementsCard({ measurements }: Props) {
   const previous = measurements[1] ?? null;
 
   const items: MeasurementItem[] = [
-    {
-      key: "chest",
-      label: "Chest",
-      latest: latest?.chest ?? null,
-      previous: previous?.chest ?? null,
-    },
     {
       key: "waist",
       label: "Waist",

@@ -29,7 +29,6 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
   const [weight, setWeight] = useState("");
   const [waist, setWaist] = useState("");
   const [hips, setHips] = useState("");
-  const [chest, setChest] = useState("");
   const [armsLeft, setArmsLeft] = useState("");
   const [armsRight, setArmsRight] = useState("");
   const [thighsLeft, setThighsLeft] = useState("");
@@ -54,8 +53,6 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
     if (wa !== undefined) data.waist = wa;
     const h = parseField(hips);
     if (h !== undefined) data.hips = h;
-    const c = parseField(chest);
-    if (c !== undefined) data.chest = c;
     const al = parseField(armsLeft);
     if (al !== undefined) data.arms_left = al;
     const ar = parseField(armsRight);
@@ -169,23 +166,6 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
               placeholder="e.g. 36.0"
               value={hips}
               onChange={(e) => setHips(e.target.value)}
-              className={inputClass}
-              style={inputStyle}
-            />
-          </div>
-
-          {/* Chest — single column */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-[#7A3347] mb-1.5">
-              Chest (in)
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              placeholder="e.g. 34.0"
-              value={chest}
-              onChange={(e) => setChest(e.target.value)}
               className={inputClass}
               style={inputStyle}
             />
