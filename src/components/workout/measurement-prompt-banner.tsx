@@ -2,9 +2,10 @@
 
 interface Props {
   show: boolean;
+  onLogClick: () => void;
 }
 
-export function MeasurementPromptBanner({ show }: Props) {
+export function MeasurementPromptBanner({ show, onLogClick }: Props) {
   if (!show) return null;
 
   return (
@@ -29,10 +30,7 @@ export function MeasurementPromptBanner({ show }: Props) {
       <button
         className="flex-shrink-0 min-h-12 px-4 rounded-xl text-sm font-semibold text-white"
         style={{ background: "#C4808E" }}
-        onClick={() => {
-          // TODO: open measurement logging form/modal
-          alert("Measurement logging form coming soon!");
-        }}
+        onClick={onLogClick}
       >
         Log now
       </button>
