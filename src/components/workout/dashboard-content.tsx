@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ALL_SPLITS, AFFIRMATIONS, SPLIT_ICONS } from "@/lib/constants";
+import { ALL_SPLITS, AFFIRMATIONS, SPLIT_ICONS, SPLIT_IMAGES } from "@/lib/constants";
 import type { WorkoutSplit } from "@/lib/types";
 import type { DailyStep } from "@/actions/health";
 import { StepsCard } from "@/components/workout/steps-card";
@@ -151,7 +151,7 @@ export function DashboardContent({
               }}
             >
               <Image
-                src={`/splits/${selectedSplit.toLowerCase()}.png`}
+                src={SPLIT_IMAGES[selectedSplit]}
                 alt={displayName}
                 width={80}
                 height={80}

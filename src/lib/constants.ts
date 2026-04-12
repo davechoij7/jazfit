@@ -139,3 +139,12 @@ export const SPLIT_ICONS: Record<WorkoutSplit, string> = {
   Walk:  "🚶‍♀️",
   Run:   "🏃‍♀️",
 };
+
+export const SPLIT_IMAGES: Record<WorkoutSplit, string> = {
+  Upper: "/Upper-Snoopy.png",
+  Lower: "/Lower-Snoopy.png",
+  Yoga:  "/Yoga-Snoopy.png",
+  Barre: "/Barre-Snoopy.png",
+  Walk:  "/Walking-Snoopy.png",
+  Run:   "/Running-Snoopy.png",
+};
