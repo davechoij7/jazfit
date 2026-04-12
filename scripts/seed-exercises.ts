@@ -22,7 +22,8 @@ const exercises: SeedExercise[] = [
   { name: "Dumbbell Fly", muscle_groups: ["Chest"], equipment_type: "dumbbell", is_default: true },
   { name: "Cable Fly", muscle_groups: ["Chest"], equipment_type: "cable", is_default: true },
   { name: "Push-Up", muscle_groups: ["Chest", "Triceps", "Core"], equipment_type: "bodyweight", is_default: true },
-  { name: "Machine Chest Press", muscle_groups: ["Chest", "Triceps"], equipment_type: "machine", is_default: true },
+  { name: "Chest Press (Machine)", muscle_groups: ["Chest", "Triceps"], equipment_type: "machine", is_default: true },
+  { name: "Pec Fly (Machine)", muscle_groups: ["Chest"], equipment_type: "machine", is_default: true },
 
   // Back (9)
   { name: "Barbell Row", muscle_groups: ["Back", "Biceps"], equipment_type: "barbell", is_default: true },
@@ -34,6 +35,8 @@ const exercises: SeedExercise[] = [
   { name: "T-Bar Row", muscle_groups: ["Back", "Biceps"], equipment_type: "barbell", is_default: true },
   { name: "Face Pull", muscle_groups: ["Back", "Shoulders"], equipment_type: "cable", is_default: true },
   { name: "Machine Row", muscle_groups: ["Back", "Biceps"], equipment_type: "machine", is_default: true },
+  { name: "Diverging Seated Row (Machine)", muscle_groups: ["Back", "Biceps"], equipment_type: "machine", is_default: true },
+  { name: "Diverging Lat Pulldown (Machine)", muscle_groups: ["Back", "Biceps"], equipment_type: "machine", is_default: true },
 
   // Shoulders (9)
   { name: "Overhead Press", muscle_groups: ["Shoulders", "Triceps"], equipment_type: "barbell", is_default: true },
@@ -44,7 +47,8 @@ const exercises: SeedExercise[] = [
   { name: "Reverse Fly", muscle_groups: ["Shoulders", "Back"], equipment_type: "dumbbell", is_default: true },
   { name: "Arnold Press", muscle_groups: ["Shoulders", "Triceps"], equipment_type: "dumbbell", is_default: true },
   { name: "Upright Row", muscle_groups: ["Shoulders", "Biceps"], equipment_type: "barbell", is_default: true },
-  { name: "Machine Shoulder Press", muscle_groups: ["Shoulders", "Triceps"], equipment_type: "machine", is_default: true },
+  { name: "Shoulder Press (Machine)", muscle_groups: ["Shoulders", "Triceps"], equipment_type: "machine", is_default: true },
+  { name: "Rear Delt (Machine)", muscle_groups: ["Shoulders", "Back"], equipment_type: "machine", is_default: true },
 
   // Biceps (8)
   { name: "Barbell Curl", muscle_groups: ["Biceps"], equipment_type: "barbell", is_default: true },
@@ -56,7 +60,10 @@ const exercises: SeedExercise[] = [
   { name: "Concentration Curl", muscle_groups: ["Biceps"], equipment_type: "dumbbell", is_default: true },
   { name: "EZ Bar Curl", muscle_groups: ["Biceps"], equipment_type: "barbell", is_default: true },
 
-  // Triceps (8)
+  // Biceps — Machine
+  { name: "Arm Curl (Machine)", muscle_groups: ["Biceps"], equipment_type: "machine", is_default: true },
+
+  // Triceps (8+)
   { name: "Tricep Pushdown", muscle_groups: ["Triceps"], equipment_type: "cable", is_default: true },
   { name: "Overhead Tricep Extension", muscle_groups: ["Triceps"], equipment_type: "dumbbell", is_default: true },
   { name: "Close-Grip Bench Press", muscle_groups: ["Triceps", "Chest"], equipment_type: "barbell", is_default: true },
@@ -65,13 +72,20 @@ const exercises: SeedExercise[] = [
   { name: "Cable Overhead Extension", muscle_groups: ["Triceps"], equipment_type: "cable", is_default: true },
   { name: "Diamond Push-Up", muscle_groups: ["Triceps", "Chest"], equipment_type: "bodyweight", is_default: true },
   { name: "Tricep Kickback", muscle_groups: ["Triceps"], equipment_type: "dumbbell", is_default: true },
+  { name: "Tricep Extension (Machine)", muscle_groups: ["Triceps"], equipment_type: "machine", is_default: true },
+  { name: "Seated Dip (Machine)", muscle_groups: ["Triceps", "Chest"], equipment_type: "machine", is_default: true },
 
   // Legs (10)
   { name: "Barbell Squat", muscle_groups: ["Legs", "Glutes", "Core"], equipment_type: "barbell", is_default: true },
   { name: "Leg Press", muscle_groups: ["Legs", "Glutes"], equipment_type: "machine", is_default: true },
   { name: "Romanian Deadlift", muscle_groups: ["Legs", "Glutes", "Back"], equipment_type: "barbell", is_default: true },
   { name: "Leg Extension", muscle_groups: ["Legs"], equipment_type: "machine", is_default: true },
-  { name: "Leg Curl", muscle_groups: ["Legs"], equipment_type: "machine", is_default: true },
+  { name: "Seated Leg Curl (Machine)", muscle_groups: ["Legs"], equipment_type: "machine", is_default: true },
+  { name: "Prone Leg Curl (Machine)", muscle_groups: ["Legs"], equipment_type: "machine", is_default: true },
+  { name: "Single Leg Press (Machine)", muscle_groups: ["Legs", "Glutes"], equipment_type: "machine", is_default: true },
+  { name: "Split Leg Press (Machine)", muscle_groups: ["Legs", "Glutes"], equipment_type: "machine", is_default: true },
+  { name: "Hip Abduction (Machine)", muscle_groups: ["Glutes"], equipment_type: "machine", is_default: true },
+  { name: "Hip Adduction (Machine)", muscle_groups: ["Legs"], equipment_type: "machine", is_default: true },
   { name: "Bulgarian Split Squat", muscle_groups: ["Legs", "Glutes"], equipment_type: "dumbbell", is_default: true },
   { name: "Walking Lunge", muscle_groups: ["Legs", "Glutes"], equipment_type: "dumbbell", is_default: true },
   { name: "Calf Raise", muscle_groups: ["Legs"], equipment_type: "machine", is_default: true },
@@ -80,6 +94,7 @@ const exercises: SeedExercise[] = [
 
   // Glutes (7)
   { name: "Hip Thrust", muscle_groups: ["Glutes", "Legs"], equipment_type: "barbell", is_default: true },
+  { name: "Hip Thrust (Machine)", muscle_groups: ["Glutes", "Legs"], equipment_type: "machine", is_default: true },
   { name: "Cable Kickback", muscle_groups: ["Glutes"], equipment_type: "cable", is_default: true },
   { name: "Glute Bridge", muscle_groups: ["Glutes"], equipment_type: "bodyweight", is_default: true },
   { name: "Sumo Deadlift", muscle_groups: ["Glutes", "Legs", "Back"], equipment_type: "barbell", is_default: true },
