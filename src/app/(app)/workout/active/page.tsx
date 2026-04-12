@@ -209,7 +209,7 @@ export default function ActiveWorkoutPage() {
   const nextEx = workout.state.exercises[workout.state.currentExerciseIndex + 1] ?? null;
 
   return (
-    <div className="flex flex-col min-h-dvh bg-bg-primary">
+    <div className="flex flex-col min-h-dvh pb-20 bg-bg-primary">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-border">
         <button
@@ -254,7 +254,7 @@ export default function ActiveWorkoutPage() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 px-4 pb-4 overflow-y-auto">
+      <div className="flex-1 px-4 pb-24 overflow-y-auto">
         {currentEx && (
           <ActiveExercise
             exerciseState={currentEx}
