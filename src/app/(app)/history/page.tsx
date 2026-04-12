@@ -36,7 +36,15 @@ export default async function HistoryPage() {
       </div>
 
       {/* Session list */}
-      <div>
+      <div
+        className="rounded-2xl p-4"
+        style={{
+          background: "rgba(240, 196, 206, 0.55)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: "1px solid rgba(255, 255, 255, 0.25)",
+        }}
+      >
         <h2 className="text-sm font-medium text-text-muted mb-3 tracking-wide">Recent Workouts</h2>
         {grouped.length === 0 ? (
           <div className="text-center py-12">

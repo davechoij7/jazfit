@@ -26,7 +26,15 @@ export function ChartsPanel({ chartsData }: Props) {
       : null;
 
   return (
-    <div className="bg-bg-card rounded-2xl border border-border p-4">
+    <div
+      className="rounded-2xl p-4"
+      style={{
+        background: "rgba(240, 196, 206, 0.55)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: "1px solid rgba(255, 255, 255, 0.25)",
+      }}
+    >
       {/* Tab bar */}
       <div className="flex border-b border-border mb-4">
         {TABS.map((tab) => (
