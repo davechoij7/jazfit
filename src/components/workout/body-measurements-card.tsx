@@ -145,10 +145,10 @@ export function BodyMeasurementsCard({ measurements }: Props) {
         </div>
       </div>
 
-      <div className="mt-4 text-right">
+      <div className="mt-2 flex justify-end">
         <Link
           href="/profile/measurements"
-          className="text-xs font-medium"
+          className="min-h-[48px] flex items-center px-1 text-xs font-medium"
           style={{ color: "#C4808E" }}
         >
           View all →

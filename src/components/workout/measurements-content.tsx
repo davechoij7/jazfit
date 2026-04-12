@@ -26,7 +26,7 @@ const METRIC_FIELDS: Record<string, keyof BodyMeasurement> = {
   "R Thigh": "thighs_right",
 };
 
-const TABS = ["Waist", "Hips", "L Arm", "R Arm", "L Thigh", "R Thigh"];
+const TABS = Object.keys(METRIC_FIELDS);
 
 const DISPLAY_FIELDS: Array<{
   key: keyof BodyMeasurement;
@@ -87,7 +87,7 @@ export function MeasurementsContent({ measurements }: Props) {
           <button
             key={tab}
             onClick={() => setSelectedTab(tab)}
-            className="shrink-0 min-h-[40px] px-4 rounded-full text-sm font-medium transition-colors touch-manipulation"
+            className="shrink-0 min-h-[48px] px-4 rounded-full text-sm font-medium transition-colors touch-manipulation"
             style={
               selectedTab === tab
                 ? { background: "#C4808E", color: "white" }
