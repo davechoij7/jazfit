@@ -18,11 +18,11 @@ export default async function DashboardPage() {
       .eq("is_available", true),
     supabase
       .from("workout_sessions")
-      .select("id, date, muscle_groups_focus, duration_seconds")
+      .select("id, date, muscle_groups_focus, workout_type")
       .eq("user_id", user!.id)
       .not("completed_at", "is", null)
       .order("date", { ascending: false })
-      .limit(10),
+      .gte("date", new Date(Date.now() - 14 * 86400000).toISOString().split("T")[0]),
     getLast7DaysSteps(),
   ]);
 

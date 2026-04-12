@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { computeStreak } from "@/lib/workout-engine";
 import type { MuscleGroup, WorkoutSplit } from "@/lib/types";
 
 export async function createWorkoutSession(
@@ -101,6 +102,43 @@ export async function deleteWorkoutSession(sessionId: string) {
     .eq("user_id", user.id);
 
   if (error) throw new Error(error.message);
+}
+
+export interface WorkoutStats {
+  totalWorkouts: number;
+  streak: number;
+  mostUsedSplit: WorkoutSplit | null;
+}
+
+export async function getWorkoutStats(): Promise<WorkoutStats> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { totalWorkouts: 0, streak: 0, mostUsedSplit: null };
+
+  const { data: sessions } = await supabase
+    .from("workout_sessions")
+    .select("date, workout_type")
+    .eq("user_id", user.id)
+    .not("completed_at", "is", null)
+    .order("date", { ascending: false });
+
+  if (!sessions || sessions.length === 0) {
+    return { totalWorkouts: 0, streak: 0, mostUsedSplit: null };
+  }
+
+  const totalWorkouts = sessions.length;
+  const streak = computeStreak(sessions);
+
+  // Mode of workout_type
+  const counts: Partial<Record<string, number>> = {};
+  for (const s of sessions) {
+    if (s.workout_type) counts[s.workout_type] = (counts[s.workout_type] ?? 0) + 1;
+  }
+  const sortedEntries = Object.entries(counts).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+  const mostUsedSplit = (sortedEntries[0]?.[0] ?? null) as WorkoutSplit | null;
+
+  return { totalWorkouts, streak, mostUsedSplit };
 }
 
 export async function getExerciseHistory(exerciseId: string) {

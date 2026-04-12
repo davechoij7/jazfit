@@ -251,3 +251,26 @@ function shuffle<T>(arr: T[]): T[] {
   }
   return arr;
 }
+
+/**
+ * Compute current workout streak in calendar days.
+ * Streak = consecutive calendar days ending today or yesterday with at least one completed session.
+ */
+export function computeStreak(sessions: { date: string }[]): number {
+  const dates = [...new Set(sessions.map((s) => s.date))].sort().reverse();
+  if (dates.length === 0) return 0;
+
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+  if (dates[0] !== today && dates[0] !== yesterday) return 0;
+
+  let streak = 1;
+  for (let i = 1; i < dates.length; i++) {
+    const diffMs = new Date(dates[i - 1]).getTime() - new Date(dates[i]).getTime();
+    const diffDays = Math.round(diffMs / 86400000);
+    if (diffDays === 1) streak++;
+    else break;
+  }
+  return streak;
+}
