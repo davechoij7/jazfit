@@ -1,9 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { MuscleGroup } from "@/lib/types";
+import type { MuscleGroup, WorkoutSplit } from "@/lib/types";
 
-export async function createWorkoutSession(muscleGroups: MuscleGroup[]) {
+export async function createWorkoutSession(
+  muscleGroups: MuscleGroup[],
+  workoutType: WorkoutSplit
+) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
@@ -14,6 +17,7 @@ export async function createWorkoutSession(muscleGroups: MuscleGroup[]) {
       user_id: user.id,
       date: new Date().toISOString().split("T")[0],
       muscle_groups_focus: muscleGroups,
+      workout_type: workoutType,
     })
     .select("id")
     .single();

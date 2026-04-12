@@ -2,94 +2,128 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MUSCLE_GROUP_COLORS } from "@/lib/constants";
-import type { MuscleGroup } from "@/lib/types";
+import { MUSCLE_GROUP_COLORS, WORKOUT_TYPE_COLORS } from "@/lib/constants";
+import { getChartsData } from "@/actions/charts";
+import { ChartsPanel } from "@/components/workout/charts/charts-panel";
+import type { MuscleGroup, WorkoutSplit } from "@/lib/types";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: sessions } = await supabase
-    .from("workout_sessions")
-    .select("id, date, muscle_groups_focus, duration_seconds, notes, completed_at")
-    .eq("user_id", user!.id)
-    .not("completed_at", "is", null)
-    .order("date", { ascending: false })
-    .limit(30);
+  const [{ data: sessions }, chartsData] = await Promise.all([
+    supabase
+      .from("workout_sessions")
+      .select("id, date, muscle_groups_focus, workout_type, duration_seconds, notes, completed_at")
+      .eq("user_id", user!.id)
+      .not("completed_at", "is", null)
+      .order("date", { ascending: false })
+      .limit(30),
+    getChartsData(),
+  ]);
 
   // Group sessions by week
-  const grouped = groupByWeek(sessions ?? []);
+  const grouped = groupByWeek(sessions ?? [] as SessionRow[]);
 
   return (
     <div className="px-4 pt-6 pb-4">
-      <h1 className="text-2xl font-display font-normal text-text-primary mb-6">Workout History</h1>
+      <h1 className="text-2xl font-display font-normal text-text-primary mb-6">Progress</h1>
 
-      {grouped.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-text-muted">No workouts yet.</p>
-          <p className="text-text-dim text-sm mt-1">Complete your first workout to see it here.</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {grouped.map(({ label, sessions: weekSessions }) => (
-            <div key={label}>
-              <h2 className="text-xs font-medium text-text-dim tracking-wide mb-2">
-                {label}
-              </h2>
-              <div className="space-y-2">
-                {weekSessions.map((session) => (
-                  <Link key={session.id} href={`/history/${session.id}`}>
-                    <Card padding="sm" className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="text-sm font-medium text-text-primary">
-                          {new Date(session.date + "T00:00:00").toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {session.muscle_groups_focus.map((g: string) => (
-                            <Badge
-                              key={g}
-                              colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}
-                              size="sm"
-                            >
-                              {g}
-                            </Badge>
-                          ))}
+      {/* Charts */}
+      <div className="mb-8">
+        <h2 className="text-sm font-medium text-text-muted mb-3 tracking-wide">Your Progress</h2>
+        <ChartsPanel chartsData={chartsData} />
+      </div>
+
+      {/* Session list */}
+      <div>
+        <h2 className="text-sm font-medium text-text-muted mb-3 tracking-wide">Recent Workouts</h2>
+        {grouped.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-text-muted">No workouts yet.</p>
+            <p className="text-text-dim text-sm mt-1">Complete your first workout to see it here.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {grouped.map(({ label, sessions: weekSessions }) => (
+              <div key={label}>
+                <h2 className="text-xs font-medium text-text-dim tracking-wide mb-2">
+                  {label}
+                </h2>
+                <div className="space-y-2">
+                  {weekSessions.map((session) => (
+                    <Link key={session.id} href={`/history/${session.id}`}>
+                      <Card padding="sm" className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="text-sm font-medium text-text-primary">
+                            {new Date(session.date + "T00:00:00").toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {session.workout_type && session.muscle_groups_focus.length === 0 ? (
+                              <Badge
+                                colorClass={WORKOUT_TYPE_COLORS[session.workout_type as WorkoutSplit]}
+                                size="sm"
+                              >
+                                {session.workout_type}
+                              </Badge>
+                            ) : (
+                              session.muscle_groups_focus.map((g) => (
+                                <Badge
+                                  key={g}
+                                  colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}
+                                  size="sm"
+                                >
+                                  {g}
+                                </Badge>
+                              ))
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {session.duration_seconds && (
-                          <span className="text-sm text-text-dim">
-                            {Math.round(session.duration_seconds / 60)}min
-                          </span>
-                        )}
-                        <svg
-                          className="w-4 h-4 text-text-dim"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
+                        <div className="flex items-center gap-2">
+                          {session.duration_seconds && (
+                            <span className="text-sm text-text-dim">
+                              {Math.round(session.duration_seconds / 60)}min
+                            </span>
+                          )}
+                          <svg
+                            className="w-4 h-4 text-text-dim"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                          </svg>
+                        </div>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function groupByWeek(sessions: any[]) {
-  const groups: { label: string; sessions: any[] }[] = [];
+type SessionRow = {
+  id: string;
+  date: string;
+  muscle_groups_focus: string[];
+  workout_type: string | null;
+  duration_seconds: number | null;
+  notes: string | null;
+  completed_at: string | null;
+};
+
+function groupByWeek(sessions: SessionRow[]) {
+  const groups: { label: string; sessions: SessionRow[] }[] = [];
   const now = new Date();
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - now.getDay());
@@ -98,9 +132,9 @@ function groupByWeek(sessions: any[]) {
   const lastWeek = new Date(startOfWeek);
   lastWeek.setDate(lastWeek.getDate() - 7);
 
-  const thisWeek: any[] = [];
-  const lastWeekArr: any[] = [];
-  const older: any[] = [];
+  const thisWeek: SessionRow[] = [];
+  const lastWeekArr: SessionRow[] = [];
+  const older: SessionRow[] = [];
 
   for (const session of sessions) {
     const date = new Date(session.date + "T00:00:00");

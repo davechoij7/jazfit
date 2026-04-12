@@ -1,4 +1,4 @@
-import type { MuscleGroup, EquipmentType } from "./types";
+import type { MuscleGroup, EquipmentType, StrengthSplit, NonStrengthSplit, WorkoutSplit } from "./types";
 
 export const MUSCLE_GROUPS: MuscleGroup[] = [
   "Chest",
@@ -29,9 +29,37 @@ export const SYNERGY_GROUPS: { name: string; primary: MuscleGroup; secondary: Mu
 ];
 
 // Upper/Lower split groupings
-export const SPLIT_GROUPS: Record<import("./types").WorkoutSplit, MuscleGroup[]> = {
+export const SPLIT_GROUPS: Record<StrengthSplit, MuscleGroup[]> = {
   Upper: ["Chest", "Back", "Shoulders", "Biceps", "Triceps"],
   Lower: ["Legs", "Glutes", "Core"],
+};
+
+export const NON_STRENGTH_SPLITS = new Set<NonStrengthSplit>(["Yoga", "Barre", "Walk", "Run"]);
+
+export const ALL_SPLITS: WorkoutSplit[] = ["Upper", "Lower", "Yoga", "Barre", "Walk", "Run"];
+
+export const SPLIT_DESCRIPTIONS: Record<WorkoutSplit, string> = {
+  Upper: "Chest, Back, Shoulders, Arms",
+  Lower: "Legs, Glutes, Core",
+  Yoga:  "Flexibility & mindfulness",
+  Barre: "Low-impact full body",
+  Walk:  "Outdoor or treadmill",
+  Run:   "Cardio & endurance",
+};
+
+export const SPLIT_CATEGORIES: { label: string; splits: WorkoutSplit[] }[] = [
+  { label: "Strength",    splits: ["Upper", "Lower"] },
+  { label: "Mind & Body", splits: ["Yoga", "Barre"] },
+  { label: "Cardio",      splits: ["Walk", "Run"] },
+];
+
+export const WORKOUT_TYPE_COLORS: Record<WorkoutSplit, string> = {
+  Upper: "", // strength splits use per-muscle-group badges; no split-level color
+  Lower: "", // strength splits use per-muscle-group badges; no split-level color
+  Yoga:  "bg-[#A09878]/15 text-[#7A6858]",
+  Barre: "bg-[#F0C4CE]/40 text-[#C4808E]",
+  Walk:  "bg-[#7EBF8E]/20 text-[#4E8F5E]",
+  Run:   "bg-[#D4A960]/20 text-[#A07830]",
 };
 
 // Minimum hours before a muscle group can be trained again
@@ -93,3 +121,12 @@ export const EQUIPMENT_LABELS: Record<EquipmentType, string> = {
   bodyweight: "Bodyweight",
   band: "Band",
 };
+
+export const AFFIRMATIONS = [
+  "Eres suficiente, aquí, ahora y siempre.",
+  "Cada rep te acerca más a ti misma.",
+  "La fuerza que buscas ya vive en ti.",
+  "Hoy elegiste moverse. Eso cuenta.",
+  "Tu cuerpo recuerda cada esfuerzo.",
+  "Eres más fuerte de lo que crees.",
+];

@@ -15,6 +15,7 @@ export interface WorkoutExerciseState {
   suggestedWeight: number | null;
   shouldProgress: boolean;
   progressMessage: string | null;
+  allTimeMax: number; // highest weight ever logged for this exercise (0 if no history)
 }
 
 export interface ActiveWorkoutState {
@@ -31,7 +32,7 @@ export interface ActiveWorkoutState {
 
 type Action =
   | { type: "INIT"; sessionId: string; split: WorkoutSplit; muscleGroups: string[] }
-  | { type: "ADD_EXERCISE"; exercise: Exercise; exerciseLogId: string | null; previousWeight: number | null; previousReps: number[] | null; suggestedWeight: number | null; shouldProgress: boolean; progressMessage: string | null }
+  | { type: "ADD_EXERCISE"; exercise: Exercise; exerciseLogId: string | null; previousWeight: number | null; previousReps: number[] | null; suggestedWeight: number | null; shouldProgress: boolean; progressMessage: string | null; allTimeMax: number }
   | { type: "SET_EXERCISE_LOG_ID"; exerciseIndex: number; logId: string }
   | { type: "UPDATE_SET"; exerciseIndex: number; setIndex: number; field: "actualWeight" | "actualReps"; value: number }
   | { type: "COMPLETE_SET"; exerciseIndex: number; setIndex: number }
@@ -78,6 +79,7 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
         suggestedWeight: action.suggestedWeight,
         shouldProgress: action.shouldProgress,
         progressMessage: action.progressMessage,
+        allTimeMax: action.allTimeMax,
       };
 
       const exercises = [...state.exercises, newExercise];
@@ -120,6 +122,9 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       if (set.actualWeight === null) set.actualWeight = set.targetWeight;
       if (set.actualReps === null) set.actualReps = set.targetReps;
       set.isCompleted = true;
+
+      const actualWeight = set.actualWeight ?? 0;
+      set.isPR = ex.allTimeMax > 0 && actualWeight > ex.allTimeMax;
 
       sets[action.setIndex] = set;
       ex.sets = sets;
@@ -234,7 +239,7 @@ export function useActiveWorkout() {
   }, []);
 
   const addExercise = useCallback(
-    (exercise: Exercise, exerciseLogId: string | null, overload: { lastWeight: number; lastReps: number[]; suggestedWeight: number; shouldProgress: boolean; message: string } | null) => {
+    (exercise: Exercise, exerciseLogId: string | null, overload: { lastWeight: number; lastReps: number[]; suggestedWeight: number; shouldProgress: boolean; message: string } | null, allTimeMax: number = 0) => {
       dispatch({
         type: "ADD_EXERCISE",
         exercise,
@@ -244,6 +249,7 @@ export function useActiveWorkout() {
         suggestedWeight: overload?.suggestedWeight ?? null,
         shouldProgress: overload?.shouldProgress ?? false,
         progressMessage: overload?.message ?? null,
+        allTimeMax,
       });
     },
     []
@@ -269,6 +275,10 @@ export function useActiveWorkout() {
         ex.sets
           .filter((s) => s.isCompleted)
           .reduce((vol, s) => vol + (s.actualWeight ?? 0) * (s.actualReps ?? 0), 0),
+      0
+    ),
+    totalPRs: state.exercises.reduce(
+      (total, ex) => total + ex.sets.filter((s) => s.isPR).length,
       0
     ),
     elapsedSeconds: Math.floor((Date.now() - state.startedAt) / 1000),

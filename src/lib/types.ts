@@ -1,6 +1,8 @@
-// Database types matching supabase/migrations/001_initial_schema.sql
+// Database types matching supabase/migrations/
 
-export type WorkoutSplit = "Upper" | "Lower";
+export type StrengthSplit = "Upper" | "Lower";
+export type NonStrengthSplit = "Yoga" | "Barre" | "Walk" | "Run";
+export type WorkoutSplit = StrengthSplit | NonStrengthSplit;
 
 export type MuscleGroup =
   | "Chest"
@@ -58,6 +60,7 @@ export interface WorkoutSession {
   notes: string | null;
   created_at: string;
   completed_at: string | null;
+  workout_type: WorkoutSplit | null; // The split selected at session start (e.g. "Upper", "Yoga")
 }
 
 export interface ExerciseLog {
@@ -123,6 +126,7 @@ export interface ActiveSet {
   actualWeight: number | null;
   actualReps: number | null;
   isCompleted: boolean;
+  isPR?: boolean;
 }
 
 export interface PreviousExerciseData {

@@ -8,6 +8,7 @@ import { useActiveWorkout } from "@/lib/hooks/use-active-workout";
 import { ActiveExercise } from "@/components/workout/active-exercise";
 import { ExercisePickerDrawer } from "@/components/workout/exercise-picker-drawer";
 import { RestTimerOverlay } from "@/components/workout/rest-timer-overlay";
+import { WorkoutCompletionOverlay } from "@/components/workout/workout-completion-overlay";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import {
@@ -18,8 +19,8 @@ import {
   getExerciseHistory,
 } from "@/actions/workout";
 import { getProgressiveOverload } from "@/lib/workout-engine";
-import { SPLIT_GROUPS, DEFAULT_REST_TIMER } from "@/lib/constants";
-import type { Exercise, MuscleGroup, WorkoutSplit } from "@/lib/types";
+import { ALL_SPLITS, NON_STRENGTH_SPLITS, SPLIT_GROUPS, DEFAULT_REST_TIMER } from "@/lib/constants";
+import type { Exercise, MuscleGroup, WorkoutSplit, StrengthSplit, NonStrengthSplit } from "@/lib/types";
 
 export default function ActiveWorkoutPage() {
   return (
@@ -50,6 +51,7 @@ function ActiveWorkoutContent() {
   const [notes, setNotes] = useState("");
   const [elapsedDisplay, setElapsedDisplay] = useState("0:00");
   const hasInitialized = useRef(false);
+  const elapsedSecondsRef = useRef(0);
 
   const workout = useActiveWorkout();
 
@@ -87,15 +89,18 @@ function ActiveWorkoutContent() {
 
       // Read split from URL params
       const splitParam = searchParams.get("split") as WorkoutSplit | null;
-      if (!splitParam || !SPLIT_GROUPS[splitParam]) {
+      if (!splitParam || !ALL_SPLITS.includes(splitParam)) {
         router.replace("/dashboard");
         return;
       }
 
-      const muscleGroups = SPLIT_GROUPS[splitParam] as MuscleGroup[];
+      const isNonStrengthInit = NON_STRENGTH_SPLITS.has(splitParam as NonStrengthSplit);
+      const muscleGroups: MuscleGroup[] = isNonStrengthInit
+        ? []
+        : SPLIT_GROUPS[splitParam as StrengthSplit];
 
       // Create session in DB
-      const sessionId = await createWorkoutSession(muscleGroups);
+      const sessionId = await createWorkoutSession(muscleGroups, splitParam);
 
       // Initialize empty workout
       workout.dispatch({
@@ -128,6 +133,7 @@ function ActiveWorkoutContent() {
 
       // Calculate progressive overload
       let overload = null;
+      let allTimeMax = 0;
       if (history.length > 0) {
         const summarized = history
           .filter((h: any) => h.sets && h.sets.length > 0)
@@ -138,10 +144,11 @@ function ActiveWorkoutContent() {
           }));
         if (summarized.length > 0) {
           overload = getProgressiveOverload(summarized, exercise.equipment_type);
+          allTimeMax = Math.max(...summarized.map((h) => h.weight));
         }
       }
 
-      workout.addExercise(exercise, logId, overload);
+      workout.addExercise(exercise, logId, overload, allTimeMax);
     },
     [workout]
   );
@@ -172,16 +179,12 @@ function ActiveWorkoutContent() {
   );
 
   // Handle completing workout
-  const handleComplete = useCallback(async () => {
+  const handleComplete = useCallback(() => {
+    elapsedSecondsRef.current = Math.floor((Date.now() - workout.state.startedAt) / 1000);
     workout.dispatch({ type: "COMPLETE_WORKOUT" });
     setShowEndConfirm(false);
     setShowComplete(true);
-
-    if (workout.state.sessionId) {
-      const elapsed = Math.floor((Date.now() - workout.state.startedAt) / 1000);
-      await completeWorkoutSession(workout.state.sessionId, elapsed, notes || undefined);
-    }
-  }, [workout, notes]);
+  }, [workout]);
 
   // Loading state
   if (isInitializing || workout.state.status === "ready") {
@@ -196,9 +199,12 @@ function ActiveWorkoutContent() {
   }
 
   const currentEx = workout.currentExercise;
-  const splitMuscleGroups = (workout.state.split
-    ? SPLIT_GROUPS[workout.state.split]
-    : []) as MuscleGroup[];
+  const isNonStrength = workout.state.split
+    ? NON_STRENGTH_SPLITS.has(workout.state.split as NonStrengthSplit)
+    : false;
+  const splitMuscleGroups = isNonStrength
+    ? ([] as MuscleGroup[])
+    : (SPLIT_GROUPS[workout.state.split as StrengthSplit] ?? []) as MuscleGroup[];
 
   return (
     <div className="flex flex-col min-h-dvh pb-20 bg-bg-primary">
@@ -209,6 +215,8 @@ function ActiveWorkoutContent() {
           onClick={() => {
             if (workout.hasExercises) {
               setShowEndConfirm(true);
+            } else if (isNonStrength) {
+              handleComplete(); // opens overlay for notes
             } else {
               workout.dispatch({ type: "COMPLETE_WORKOUT" });
               router.push("/dashboard");
@@ -220,7 +228,7 @@ function ActiveWorkoutContent() {
         </button>
         <div className="text-center">
           <p className="text-xs text-text-dim">
-            {workout.state.split} Body
+            {isNonStrength ? workout.state.split : `${workout.state.split} Body`}
           </p>
           <p className="text-sm font-medium text-text-primary tabular-nums">{elapsedDisplay}</p>
         </div>
@@ -265,8 +273,33 @@ function ActiveWorkoutContent() {
 
       {/* Main content */}
       <div className="flex-1 px-4 pb-24 overflow-y-auto">
-        {!workout.hasExercises ? (
-          /* Empty state */
+        {!workout.hasExercises && isNonStrength ? (
+          /* Non-strength session: timer + notes */
+          <div className="flex flex-col items-center gap-8 py-12">
+            <div className="text-center">
+              <p className="text-6xl font-display text-text-primary tabular-nums">
+                {elapsedDisplay}
+              </p>
+              <p className="text-sm text-text-muted mt-2">Keep going</p>
+            </div>
+            <div className="w-full">
+              <label className="block text-sm font-medium text-text-muted mb-2">Notes</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="How does it feel? Any observations..."
+                rows={5}
+                className="w-full px-4 py-3 rounded-2xl bg-bg-elevated border border-border
+                           text-text-primary placeholder:text-text-dim text-base
+                           focus:outline-none focus:border-accent resize-none"
+              />
+            </div>
+            <Button size="lg" className="w-full" onClick={handleComplete}>
+              Finish {workout.state.split}
+            </Button>
+          </div>
+        ) : !workout.hasExercises ? (
+          /* Empty strength state */
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-text-muted mb-2">No exercises yet</p>
             <p className="text-text-dim text-sm mb-8">
@@ -353,22 +386,26 @@ function ActiveWorkoutContent() {
       </div>
 
       {/* Exercise Picker Drawer */}
-      <ExercisePickerDrawer
-        isOpen={showExercisePicker}
-        onClose={() => setShowExercisePicker(false)}
-        onSelect={handleAddExercise}
-        splitMuscleGroups={splitMuscleGroups}
-        alreadyAddedIds={workout.state.exercises.map((ex) => ex.exercise.id)}
-      />
+      {!isNonStrength && (
+        <ExercisePickerDrawer
+          isOpen={showExercisePicker}
+          onClose={() => setShowExercisePicker(false)}
+          onSelect={handleAddExercise}
+          splitMuscleGroups={splitMuscleGroups}
+          alreadyAddedIds={workout.state.exercises.map((ex) => ex.exercise.id)}
+        />
+      )}
 
       {/* Rest timer overlay */}
-      <RestTimerOverlay
-        isOpen={restTimer.isRunning}
-        duration={restTimer.duration}
-        remaining={restTimer.remaining}
-        onChangeDuration={(s) => restTimer.start(s)}
-        onSkip={restTimer.skip}
-      />
+      {!isNonStrength && (
+        <RestTimerOverlay
+          isOpen={restTimer.isRunning}
+          duration={restTimer.duration}
+          remaining={restTimer.remaining}
+          onChangeDuration={(s) => restTimer.start(s)}
+          onSkip={restTimer.skip}
+        />
+      )}
 
       {/* End workout confirmation */}
       <Modal isOpen={showEndConfirm} onClose={() => setShowEndConfirm(false)} title="End Workout?">
@@ -386,48 +423,26 @@ function ActiveWorkoutContent() {
       </Modal>
 
       {/* Workout complete */}
-      <Modal isOpen={showComplete} onClose={() => router.push("/dashboard")} title="Workout Complete!">
-        <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-text-primary">{elapsedDisplay}</p>
-              <p className="text-xs text-text-dim">Duration</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-text-primary">{workout.totalSetsCompleted}</p>
-              <p className="text-xs text-text-dim">Sets</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-text-primary">
-                {workout.totalVolume > 1000
-                  ? `${(workout.totalVolume / 1000).toFixed(1)}k`
-                  : workout.totalVolume}
-              </p>
-              <p className="text-xs text-text-dim">Volume (lbs)</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-text-muted mb-1">Notes (optional)</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="How did it feel?"
-              rows={2}
-              className="w-full px-3 py-2 rounded-xl bg-bg-elevated border border-border
-                         text-text-primary placeholder:text-text-dim text-sm
-                         focus:outline-none focus:border-accent resize-none"
-            />
-          </div>
-
-          <Button className="w-full" onClick={() => router.push("/history")}>
-            Continue
-          </Button>
-          <Button variant="secondary" className="w-full" onClick={() => router.push("/dashboard")}>
-            Back to Home
-          </Button>
-        </div>
-      </Modal>
+      <WorkoutCompletionOverlay
+        isOpen={showComplete}
+        duration={elapsedDisplay}
+        totalSets={workout.totalSetsCompleted}
+        totalVolume={workout.totalVolume}
+        totalPRs={workout.totalPRs}
+        notes={notes}
+        onNotesChange={setNotes}
+        onDone={async () => {
+          if (workout.state.sessionId) {
+            await completeWorkoutSession(
+              workout.state.sessionId,
+              elapsedSecondsRef.current,
+              notes || undefined
+            );
+          }
+          router.push("/dashboard");
+        }}
+        isNonStrength={isNonStrength}
+      />
     </div>
   );
 }

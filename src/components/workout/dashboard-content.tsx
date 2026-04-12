@@ -1,35 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SPLIT_GROUPS, MUSCLE_GROUP_COLORS } from "@/lib/constants";
-import type { MuscleGroup, WorkoutSession, WorkoutSplit } from "@/lib/types";
-import { ChartsPanel } from "@/components/workout/charts/charts-panel";
-import type { ChartsData } from "@/actions/charts";
+import { SPLIT_GROUPS, SPLIT_CATEGORIES, SPLIT_DESCRIPTIONS, MUSCLE_GROUP_COLORS, AFFIRMATIONS } from "@/lib/constants";
+import type { MuscleGroup, WorkoutSplit, StrengthSplit } from "@/lib/types";
 
 interface DashboardContentProps {
-  recentSessions: Pick<
-    WorkoutSession,
-    "id" | "date" | "muscle_groups_focus" | "duration_seconds"
-  >[];
   hasExercises: boolean;
   suggestedSplit: WorkoutSplit;
-  chartsData: ChartsData;
 }
 
-const SPLIT_OPTIONS: WorkoutSplit[] = ["Upper", "Lower"];
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Let's go";
+}
+
+
+function isStrengthSplit(s: WorkoutSplit): s is StrengthSplit {
+  return s === "Upper" || s === "Lower";
+}
 
 export function DashboardContent({
-  recentSessions,
   hasExercises,
   suggestedSplit,
-  chartsData,
 }: DashboardContentProps) {
   const [selectedSplit, setSelectedSplit] =
     useState<WorkoutSplit>(suggestedSplit);
+  const greeting = getGreeting();
+  const affirmation = useMemo(
+    () => AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)],
+    []
+  );
 
   if (!hasExercises) {
     return (
@@ -48,133 +53,74 @@ export function DashboardContent({
   }
 
   return (
-    <div className="px-4 pt-6 space-y-6">
-      {/* Header */}
+    <div className="px-4 pt-6 space-y-5">
+      {/* Greeting */}
       <div>
-        <p className="text-text-muted text-sm">
-          {new Date().toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
-        <h1 className="text-2xl font-display font-normal text-text-primary">
-          Today&apos;s Workout
+        <h1 className="text-2xl font-display text-text-primary">
+          {greeting}, Jazmin
         </h1>
+        <p className="text-sm text-text-muted italic mt-1">{affirmation}</p>
       </div>
 
-      {/* Split Picker */}
-      <div className="space-y-3">
-        {SPLIT_OPTIONS.map((split) => {
-          const isSelected = split === selectedSplit;
-          const isSuggested = split === suggestedSplit;
-          const muscles = SPLIT_GROUPS[split];
+      {/* Hero split card — selected/suggested */}
+      <Link href={`/workout/active?split=${selectedSplit}`} className="block">
+        <div className="rounded-2xl bg-accent/10 border-2 border-accent p-6 min-h-[140px] flex flex-col justify-between">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-2xl font-display text-text-primary">
+              {!isStrengthSplit(selectedSplit) ? selectedSplit : `${selectedSplit} Body`}
+            </span>
+            {selectedSplit === suggestedSplit && (
+              <Badge size="sm" colorClass="bg-accent/20 text-accent">
+                Suggested
+              </Badge>
+            )}
+          </div>
+          {isStrengthSplit(selectedSplit) ? (
+            <div className="flex flex-wrap gap-1.5">
+              {SPLIT_GROUPS[selectedSplit].map((g) => (
+                <Badge key={g} size="sm" colorClass={MUSCLE_GROUP_COLORS[g]}>
+                  {g}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted">{SPLIT_DESCRIPTIONS[selectedSplit]}</p>
+          )}
+        </div>
+      </Link>
 
+      {/* Category-grouped shelf — other options */}
+      <div className="space-y-4">
+        {SPLIT_CATEGORIES.map(({ label, splits }) => {
+          const others = splits.filter((s) => s !== selectedSplit);
+          if (!others.length) return null;
           return (
-            <button
-              key={split}
-              type="button"
-              className="w-full text-left"
-              onClick={() => setSelectedSplit(split)}
-            >
-              <Card
-                padding="lg"
-                className={`min-h-[80px] transition-all ${
-                  isSelected
-                    ? "ring-2 ring-accent border-accent"
-                    : "opacity-60"
-                }`}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-display font-normal text-text-primary">
-                      {split} Body
-                    </span>
-                    {isSuggested && (
-                      <Badge size="sm" colorClass="bg-accent/20 text-accent">
-                        Suggested
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {muscles.map((g) => (
-                      <Badge
-                        key={g}
-                        size="sm"
-                        colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}
-                      >
-                        {g}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            </button>
+            <div key={label}>
+              <p className="text-xs text-text-dim tracking-wide mb-2 uppercase">{label}</p>
+              <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4">
+                {others.map((split) => (
+                  <button
+                    key={split}
+                    type="button"
+                    onClick={() => setSelectedSplit(split)}
+                    className="shrink-0 w-40 min-h-12 rounded-2xl bg-bg-card border border-border p-4 text-left touch-manipulation select-none"
+                  >
+                    <p className="text-sm font-display text-text-primary mb-1">{split}</p>
+                    <p className="text-xs text-text-muted">{SPLIT_DESCRIPTIONS[split]}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
           );
         })}
       </div>
 
-      {/* Start Workout */}
+      {/* Start CTA */}
       <Link href={`/workout/active?split=${selectedSplit}`}>
         <Button size="lg" className="w-full">
           Start Workout
         </Button>
       </Link>
-
-      {/* Progress Charts */}
-      <div>
-        <h2 className="text-sm font-medium text-text-muted mb-3 tracking-wide">
-          Your Progress
-        </h2>
-        <ChartsPanel chartsData={chartsData} />
-      </div>
-
-      {/* Recent Activity */}
-      {recentSessions.length > 0 && (
-        <div>
-          <h2 className="text-sm font-medium text-text-muted mb-3 tracking-wide">
-            Recent Workouts
-          </h2>
-          <div className="space-y-2">
-            {recentSessions.slice(0, 3).map((session) => (
-              <Link key={session.id} href={`/history/${session.id}`}>
-                <Card
-                  padding="sm"
-                  className="flex items-center justify-between"
-                >
-                  <div>
-                    <p className="text-sm text-text-primary font-medium">
-                      {new Date(
-                        session.date + "T00:00:00"
-                      ).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </p>
-                    <div className="flex gap-1 mt-1">
-                      {session.muscle_groups_focus.map((g) => (
-                        <Badge
-                          key={g}
-                          colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}
-                          size="sm"
-                        >
-                          {g}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  {session.duration_seconds && (
-                    <span className="text-sm text-text-dim">
-                      {Math.round(session.duration_seconds / 60)}min
-                    </span>
-                  )}
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

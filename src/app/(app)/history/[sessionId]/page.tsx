@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WorkoutSummary } from "@/components/workout/workout-summary";
 import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
-import { MUSCLE_GROUP_COLORS, EQUIPMENT_LABELS } from "@/lib/constants";
-import type { MuscleGroup, EquipmentType } from "@/lib/types";
+import { MUSCLE_GROUP_COLORS, EQUIPMENT_LABELS, WORKOUT_TYPE_COLORS } from "@/lib/constants";
+import type { MuscleGroup, EquipmentType, WorkoutSplit } from "@/lib/types";
 
 interface Props {
   params: Promise<{ sessionId: string }>;
@@ -61,22 +61,41 @@ export default async function SessionDetailPage({ params }: Props) {
         <div>
           <p className="text-sm text-text-muted">{dateStr}</p>
           <div className="flex flex-wrap gap-2 mt-2">
-            {session.muscle_groups_focus.map((g: string) => (
-              <Badge key={g} colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}>
-                {g}
+            {session.workout_type && session.muscle_groups_focus.length === 0 ? (
+              <Badge colorClass={WORKOUT_TYPE_COLORS[session.workout_type as WorkoutSplit]}>
+                {session.workout_type}
               </Badge>
-            ))}
+            ) : (
+              session.muscle_groups_focus.map((g: string) => (
+                <Badge key={g} colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}>
+                  {g}
+                </Badge>
+              ))
+            )}
           </div>
         </div>
         <DeleteWorkoutButton sessionId={sessionId} />
       </div>
 
       {/* Summary stats */}
-      <WorkoutSummary
-        duration={session.duration_seconds}
-        totalSets={totalSets}
-        totalVolume={totalVolume}
-      />
+      {session.workout_type && session.muscle_groups_focus.length === 0 ? (
+        <Card padding="md">
+          <div className="text-center">
+            <p className="text-xl font-bold text-text-primary">
+              {session.duration_seconds
+                ? `${Math.round(session.duration_seconds / 60)} min`
+                : "--"}
+            </p>
+            <p className="text-xs text-text-dim">Duration</p>
+          </div>
+        </Card>
+      ) : (
+        <WorkoutSummary
+          duration={session.duration_seconds}
+          totalSets={totalSets}
+          totalVolume={totalVolume}
+        />
+      )}
 
       {/* Notes */}
       {session.notes && (
@@ -86,6 +105,7 @@ export default async function SessionDetailPage({ params }: Props) {
       )}
 
       {/* Exercise breakdown */}
+      {(exerciseLogs?.length ?? 0) > 0 && (
       <div className="space-y-4">
         <h2 className="text-sm font-medium text-text-dim tracking-wide">
           Exercises
@@ -132,6 +152,7 @@ export default async function SessionDetailPage({ params }: Props) {
           );
         })}
       </div>
+      )}
     </div>
   );
 }
