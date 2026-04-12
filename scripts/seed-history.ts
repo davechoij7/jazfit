@@ -35,7 +35,7 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-01-14",
     exercises: [
-      { name: "Hip Abduction", weight: 55 },
+      { name: "Hip Abduction (Machine)", weight: 55 },
       { name: "Leg Press", weight: 70 },
       { name: "Calf Raise", weight: 70 },
       { name: "Leg Extension", weight: 45 },
@@ -55,8 +55,8 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-01-18",
     exercises: [
-      { name: "Hip Abduction", weight: 70 },
-      { name: "Hip Adduction", weight: 40 },
+      { name: "Hip Abduction (Machine)", weight: 70 },
+      { name: "Hip Adduction (Machine)", weight: 40 },
       { name: "Leg Extension", weight: 55 },
       { name: "Leg Press", weight: 85 },
     ],
@@ -74,11 +74,11 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-01-22",
     exercises: [
-      { name: "Hip Abduction", weight: 70 },
-      { name: "Hip Adduction", weight: 40 },
+      { name: "Hip Abduction (Machine)", weight: 70 },
+      { name: "Hip Adduction (Machine)", weight: 40 },
       { name: "Leg Press", weight: 85 },
-      { name: "Seated Leg Curl", weight: 45, note: "Set chair to 2 and tip to 1" },
-      { name: "Prone Leg Curl", weight: 40, note: "Adjust tip to lowest" },
+      { name: "Seated Leg Curl (Machine)", weight: 45, note: "Set chair to 2 and tip to 1" },
+      { name: "Prone Leg Curl (Machine)", weight: 40, note: "Adjust tip to lowest" },
     ],
   },
   {
@@ -94,10 +94,10 @@ const WORKOUTS: WorkoutDay[] = [
     date: "2026-01-26",
     exercises: [
       { name: "Leg Extension", weight: 55 },
-      { name: "Hip Adduction", weight: 55, note: "Maybe 70 lbs next time" },
-      { name: "Hip Abduction", weight: 60, note: "60 lbs leaning forward, 65 leaning back" },
+      { name: "Hip Adduction (Machine)", weight: 55, note: "Maybe 70 lbs next time" },
+      { name: "Hip Abduction (Machine)", weight: 60, note: "60 lbs leaning forward, 65 leaning back" },
       { name: "Leg Press", weight: 85 },
-      { name: "Prone Leg Curl", weight: 40 },
+      { name: "Prone Leg Curl (Machine)", weight: 40 },
     ],
   },
   {
@@ -114,9 +114,9 @@ const WORKOUTS: WorkoutDay[] = [
     date: "2026-01-30",
     exercises: [
       { name: "Leg Press", weight: 100 },
-      { name: "Seated Leg Curl", weight: 55 },
-      { name: "Hip Adduction", weight: 55 },
-      { name: "Hip Abduction", weight: 65 },
+      { name: "Seated Leg Curl (Machine)", weight: 55 },
+      { name: "Hip Adduction (Machine)", weight: 55 },
+      { name: "Hip Abduction (Machine)", weight: 65 },
       { name: "Leg Extension", weight: 55 },
     ],
   },
@@ -133,11 +133,11 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-02-04",
     exercises: [
-      { name: "Hip Abduction", weight: 67.5 },
+      { name: "Hip Abduction (Machine)", weight: 67.5 },
       { name: "Leg Press", weight: 100 },
-      { name: "Hip Adduction", weight: 55 },
-      { name: "Seated Leg Curl", weight: 45, note: "Can't do 55 yet, set tip to 2 chair back to 2" },
-      { name: "Prone Leg Curl", weight: 40 },
+      { name: "Hip Adduction (Machine)", weight: 55 },
+      { name: "Seated Leg Curl (Machine)", weight: 45, note: "Can't do 55 yet, set tip to 2 chair back to 2" },
+      { name: "Prone Leg Curl (Machine)", weight: 40 },
     ],
   },
   {
@@ -154,11 +154,11 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-02-08",
     exercises: [
-      { name: "Hip Adduction", weight: 60 },
-      { name: "Hip Abduction", weight: 67 },
+      { name: "Hip Adduction (Machine)", weight: 60 },
+      { name: "Hip Abduction (Machine)", weight: 67 },
       { name: "Leg Extension", weight: 55 },
       { name: "Leg Press", weight: 100 },
-      { name: "Prone Leg Curl", weight: 45 },
+      { name: "Prone Leg Curl (Machine)", weight: 45 },
     ],
   },
   {
@@ -174,8 +174,8 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-02-13",
     exercises: [
-      { name: "Hip Abduction", weight: 70 },
-      { name: "Hip Adduction", weight: 60 },
+      { name: "Hip Abduction (Machine)", weight: 70 },
+      { name: "Hip Adduction (Machine)", weight: 60 },
       { name: "Leg Press", weight: 100 },
       { name: "Leg Extension", weight: 55 },
     ],
@@ -196,10 +196,10 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-02-18",
     exercises: [
-      { name: "Hip Adduction", weight: 60 },
+      { name: "Hip Adduction (Machine)", weight: 60 },
       { name: "Leg Extension", weight: 55 },
-      { name: "Hip Abduction", weight: 70 },
-      { name: "Seated Leg Curl", weight: 45 },
+      { name: "Hip Abduction (Machine)", weight: 70 },
+      { name: "Seated Leg Curl (Machine)", weight: 45 },
     ],
     sessionNote: "Locker room 27 0401. Leg press: skipped, cramped.",
   },
@@ -218,10 +218,10 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-02-22",
     exercises: [
-      { name: "Hip Adduction", weight: 60 },
-      { name: "Hip Abduction", weight: 70 },
+      { name: "Hip Adduction (Machine)", weight: 60 },
+      { name: "Hip Abduction (Machine)", weight: 70 },
       { name: "Leg Extension", weight: 55 },
-      { name: "Prone Leg Curl", weight: 50 },
+      { name: "Prone Leg Curl (Machine)", weight: 50 },
     ],
   },
   {
@@ -237,9 +237,9 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-02-26",
     exercises: [
-      { name: "Hip Adduction", weight: 60 },
-      { name: "Hip Abduction", weight: 70 },
-      { name: "Seated Leg Curl", weight: 45 },
+      { name: "Hip Adduction (Machine)", weight: 60 },
+      { name: "Hip Abduction (Machine)", weight: 70 },
+      { name: "Seated Leg Curl (Machine)", weight: 45 },
       { name: "Leg Extension", weight: 55 },
     ],
   },
@@ -258,9 +258,9 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-03-03",
     exercises: [
-      { name: "Hip Adduction", weight: 60 },
+      { name: "Hip Adduction (Machine)", weight: 60 },
       { name: "Leg Extension", weight: 55 },
-      { name: "Hip Abduction", weight: 70 },
+      { name: "Hip Abduction (Machine)", weight: 70 },
       { name: "Leg Press", weight: 100 },
     ],
   },
@@ -279,10 +279,10 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-03-08",
     exercises: [
-      { name: "Hip Adduction", weight: 65 },
+      { name: "Hip Adduction (Machine)", weight: 65 },
       { name: "Leg Press", weight: 100 },
-      { name: "Split Leg Press", weight: 25 },
-      { name: "Prone Leg Curl", weight: 45 },
+      { name: "Split Leg Press (Machine)", weight: 25 },
+      { name: "Prone Leg Curl (Machine)", weight: 45 },
     ],
   },
   {
@@ -299,11 +299,11 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-03-12",
     exercises: [
-      { name: "Split Leg Press", weight: 30 },
+      { name: "Split Leg Press (Machine)", weight: 30 },
       { name: "Leg Press", weight: 85, note: "Sore" },
-      { name: "Hip Adduction", weight: 70, note: "Barely" },
-      { name: "Prone Leg Curl", weight: 45 },
-      { name: "Hip Abduction", weight: 75 },
+      { name: "Hip Adduction (Machine)", weight: 70, note: "Barely" },
+      { name: "Prone Leg Curl (Machine)", weight: 45 },
+      { name: "Hip Abduction (Machine)", weight: 75 },
     ],
   },
   {
@@ -319,11 +319,11 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-03-17",
     exercises: [
-      { name: "Hip Adduction", weight: 70 },
-      { name: "Hip Abduction", weight: 77 },
+      { name: "Hip Adduction (Machine)", weight: 70 },
+      { name: "Hip Abduction (Machine)", weight: 77 },
       { name: "Leg Press", weight: 100 },
-      { name: "Single Leg Press", weight: 40 },
-      { name: "Prone Leg Curl", weight: 50 },
+      { name: "Single Leg Press (Machine)", weight: 40 },
+      { name: "Prone Leg Curl (Machine)", weight: 50 },
     ],
   },
   {
@@ -341,11 +341,11 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-03-21",
     exercises: [
-      { name: "Hip Adduction", weight: 70 },
-      { name: "Hip Abduction", weight: 80 },
-      { name: "Split Leg Press", weight: 40 },
+      { name: "Hip Adduction (Machine)", weight: 70 },
+      { name: "Hip Abduction (Machine)", weight: 80 },
+      { name: "Split Leg Press (Machine)", weight: 40 },
       { name: "Leg Press", weight: 100 },
-      { name: "Prone Leg Curl", weight: 50 },
+      { name: "Prone Leg Curl (Machine)", weight: 50 },
     ],
   },
   {
@@ -363,9 +363,9 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-03-26",
     exercises: [
-      { name: "Hip Adduction", weight: 77, note: "Barely" },
-      { name: "Hip Abduction", weight: 80 },
-      { name: "Split Leg Press", weight: 40, note: "Stay here for now" },
+      { name: "Hip Adduction (Machine)", weight: 77, note: "Barely" },
+      { name: "Hip Abduction (Machine)", weight: 80 },
+      { name: "Split Leg Press (Machine)", weight: 40, note: "Stay here for now" },
       { name: "Leg Press", weight: 100, note: "Go up next time" },
     ],
   },
@@ -384,10 +384,10 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-03-30",
     exercises: [
-      { name: "Single Leg Press", weight: 45 },
+      { name: "Single Leg Press (Machine)", weight: 45 },
       { name: "Leg Press", weight: 115 },
-      { name: "Hip Adduction", weight: 77, note: "Barely" },
-      { name: "Hip Abduction", weight: 85 },
+      { name: "Hip Adduction (Machine)", weight: 77, note: "Barely" },
+      { name: "Hip Abduction (Machine)", weight: 85 },
     ],
   },
   {
@@ -404,9 +404,9 @@ const WORKOUTS: WorkoutDay[] = [
   {
     date: "2026-04-09",
     exercises: [
-      { name: "Hip Adduction", weight: 85, note: "Barely" },
-      { name: "Hip Abduction", weight: 85 },
-      { name: "Single Leg Press", weight: 45 },
+      { name: "Hip Adduction (Machine)", weight: 85, note: "Barely" },
+      { name: "Hip Abduction (Machine)", weight: 85 },
+      { name: "Single Leg Press (Machine)", weight: 45 },
       { name: "Leg Press", weight: 110 },
     ],
     sessionNote: "Prone leg curl: no weight recorded",
