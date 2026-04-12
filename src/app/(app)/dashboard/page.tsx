@@ -34,6 +34,7 @@ export default async function DashboardPage() {
       hasExercises={hasExercises}
       suggestedSplit={suggestedSplit}
       weeklySteps={weeklySteps}
+      recentSessions={recentSessions ?? []}
     />
   );
 }
