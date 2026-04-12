@@ -26,7 +26,7 @@ export function ChartsPanel({ chartsData }: Props) {
       : null;
 
   return (
-    <div>
+    <div className="bg-bg-card rounded-2xl border border-border p-4">
       {/* Tab bar */}
       <div className="flex border-b border-border mb-4">
         {TABS.map((tab) => (
