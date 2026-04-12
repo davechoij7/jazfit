@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SPLIT_GROUPS, MUSCLE_GROUP_COLORS } from "@/lib/constants";
 import type { MuscleGroup, WorkoutSession, WorkoutSplit } from "@/lib/types";
+import { ChartsPanel } from "@/components/workout/charts/charts-panel";
+import type { ChartsData } from "@/actions/charts";
 
 interface DashboardContentProps {
   recentSessions: Pick<
@@ -15,6 +17,7 @@ interface DashboardContentProps {
   >[];
   hasExercises: boolean;
   suggestedSplit: WorkoutSplit;
+  chartsData: ChartsData;
 }
 
 const SPLIT_OPTIONS: WorkoutSplit[] = ["Upper", "Lower"];
@@ -23,6 +26,7 @@ export function DashboardContent({
   recentSessions,
   hasExercises,
   suggestedSplit,
+  chartsData,
 }: DashboardContentProps) {
   const [selectedSplit, setSelectedSplit] =
     useState<WorkoutSplit>(suggestedSplit);
@@ -116,6 +120,14 @@ export function DashboardContent({
           Start Workout
         </Button>
       </Link>
+
+      {/* Progress Charts */}
+      <div>
+        <h2 className="text-sm font-medium text-text-muted mb-3 tracking-wide">
+          Your Progress
+        </h2>
+        <ChartsPanel chartsData={chartsData} />
+      </div>
 
       {/* Recent Activity */}
       {recentSessions.length > 0 && (
