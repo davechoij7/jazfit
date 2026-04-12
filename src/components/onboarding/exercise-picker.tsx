@@ -63,7 +63,7 @@ export function ExercisePicker({ exercises, initialSelectedIds = [] }: ExerciseP
       </div>
 
       {/* Sticky bottom save bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-bg-primary/95 backdrop-blur-sm border-t border-border p-4 pb-safe z-50">
+      <div className="fixed bottom-16 left-0 right-0 bg-bg-primary/95 backdrop-blur-sm border-t border-border p-4 z-50">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <span className="text-sm text-text-muted">
             {selectedIds.size} exercise{selectedIds.size !== 1 ? "s" : ""} selected
