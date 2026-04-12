@@ -1,5 +1,3 @@
-"use client";
-
 import type { WorkoutStats } from "@/actions/workout";
 
 interface ProfileStatsCardProps {
@@ -8,8 +6,6 @@ interface ProfileStatsCardProps {
 
 function formatSplitLabel(split: string | null): string {
   if (!split) return "—";
-  if (split === "Upper") return "Upper Body";
-  if (split === "Lower") return "Lower Body";
   return split;
 }
 

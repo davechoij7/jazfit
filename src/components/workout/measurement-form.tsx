@@ -8,22 +8,18 @@ interface MeasurementFormProps {
   onClose: () => void;
 }
 
-function todayLabel(): string {
-  const d = new Date();
-  return d.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function todayISO(): string {
+const TODAY_LABEL = new Date().toLocaleDateString("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
+const TODAY_ISO = (() => {
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
-}
+})();
 
 export function MeasurementForm({ onClose }: MeasurementFormProps) {
   const router = useRouter();
@@ -41,7 +37,8 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
 
   function parseField(val: string): number | undefined {
     const n = parseFloat(val);
-    return isNaN(n) ? undefined : n;
+    if (isNaN(n) || n < 0) return undefined;
+    return n;
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -49,7 +46,7 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
     setError(null);
 
     const data: Parameters<typeof logMeasurement>[0] = {
-      date: todayISO(),
+      date: TODAY_ISO,
     };
     const w = parseField(weight);
     if (w !== undefined) data.weight = w;
@@ -67,6 +64,12 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
     if (tl !== undefined) data.thighs_left = tl;
     const tr = parseField(thighsRight);
     if (tr !== undefined) data.thighs_right = tr;
+
+    const hasAnyValue = Object.entries(data).some(([key, val]) => key !== "date" && val != null);
+    if (!hasAnyValue) {
+      setError("Please enter at least one measurement.");
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -105,7 +108,7 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
               Log Measurements
             </h2>
             <p className="text-sm mt-1" style={{ color: "#7A6068" }}>
-              {todayLabel()}
+              {TODAY_LABEL}
             </p>
           </div>
           <button
