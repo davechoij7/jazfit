@@ -27,10 +27,10 @@ export function WorkoutHistoryRow({ sessions }: WorkoutHistoryRowProps) {
   const weekDays = buildWeekDays();
   const todayDate = weekDays[weekDays.length - 1];
 
-  // Build a map: date → first session's workout_type
-  const sessionByDate = new Map<string, string>();
+  // Build a map: date → first session's workout_type (null = completed but no type)
+  const sessionByDate = new Map<string, string | null>();
   for (const s of sessions) {
-    if (s.workout_type && !sessionByDate.has(s.date)) {
+    if (!sessionByDate.has(s.date)) {
       sessionByDate.set(s.date, s.workout_type);
     }
   }
@@ -61,9 +61,12 @@ export function WorkoutHistoryRow({ sessions }: WorkoutHistoryRowProps) {
       {/* Tile row */}
       <div className="flex gap-1.5">
         {weekDays.map((date) => {
+          const hasSession = sessionByDate.has(date);
           const workoutType = sessionByDate.get(date) ?? null;
           const isToday = date === todayDate;
-          const emoji = workoutType ? (SPLIT_ICONS[workoutType as WorkoutSplit] ?? "💪") : null;
+          const emoji = hasSession
+            ? (workoutType ? (SPLIT_ICONS[workoutType as WorkoutSplit] ?? "💪") : "💪")
+            : null;
 
           return (
             <div key={date} className="flex-1 flex flex-col items-center gap-1">
@@ -71,7 +74,7 @@ export function WorkoutHistoryRow({ sessions }: WorkoutHistoryRowProps) {
                 className="w-full rounded-lg flex items-center justify-center"
                 style={{
                   height: "36px",
-                  background: workoutType
+                  background: hasSession
                     ? "#C4808E"
                     : "rgba(229, 203, 207, 0.3)",
                   outline: isToday
