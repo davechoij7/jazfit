@@ -1,5 +1,7 @@
 // Database types matching supabase/migrations/001_initial_schema.sql
 
+export type WorkoutSplit = "Upper" | "Lower";
+
 export type MuscleGroup =
   | "Chest"
   | "Back"

@@ -4,6 +4,7 @@ import type {
   MuscleGroupStat,
   ProgressiveOverloadSuggestion,
   WorkoutSession,
+  WorkoutSplit,
   SetLog,
 } from "./types";
 import {
@@ -132,7 +133,9 @@ export function getProgressiveOverload(
   }
 
   const lastSession = sessionHistory[0];
-  const lastWeight = lastSession.weight;
+  const lastWeight = !isFinite(lastSession.weight) || lastSession.weight <= 0
+    ? 0
+    : lastSession.weight;
   const lastReps = lastSession.reps;
 
   // Find consecutive sessions at the same weight
@@ -207,11 +210,30 @@ export function summarizeExerciseHistory(
  * Filter out warm-up sets (< 70% of max weight in the session)
  */
 function filterWorkingSets(sets: SetLog[]): SetLog[] {
+  if (sets.length === 0) return sets;
   const maxWeight = Math.max(...sets.map((s) => s.actual_weight ?? 0));
-  if (maxWeight === 0) return sets;
+  if (maxWeight <= 0) return sets;
 
   const threshold = maxWeight * 0.7;
   return sets.filter((s) => (s.actual_weight ?? 0) >= threshold);
+}
+
+/**
+ * Suggest Upper or Lower split based on the most recent workout.
+ * If last session was Upper → suggest Lower, and vice versa.
+ * Defaults to Upper if no history.
+ */
+export function suggestSplit(
+  recentSessions: Pick<WorkoutSession, "date" | "muscle_groups_focus">[]
+): WorkoutSplit {
+  if (recentSessions.length === 0) return "Upper";
+
+  const last = recentSessions[0]; // sorted descending by date
+  const upperGroups: MuscleGroup[] = ["Chest", "Back", "Shoulders", "Biceps", "Triceps"];
+  const wasUpper = last.muscle_groups_focus.some((g) =>
+    upperGroups.includes(g as MuscleGroup)
+  );
+  return wasUpper ? "Lower" : "Upper";
 }
 
 /** Fisher-Yates shuffle (mutates array) */

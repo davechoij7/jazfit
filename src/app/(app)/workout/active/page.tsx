@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 import { useRestTimer } from "@/lib/hooks/use-rest-timer";
 import { useActiveWorkout } from "@/lib/hooks/use-active-workout";
 import { ActiveExercise } from "@/components/workout/active-exercise";
-import { NextUpPreview } from "@/components/workout/next-up-preview";
+import { ExercisePickerDrawer } from "@/components/workout/exercise-picker-drawer";
 import { RestTimerOverlay } from "@/components/workout/rest-timer-overlay";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -17,29 +17,44 @@ import {
   completeWorkoutSession,
   getExerciseHistory,
 } from "@/actions/workout";
-import { getProgressiveOverload, summarizeExerciseHistory } from "@/lib/workout-engine";
-import { DEFAULT_REST_TIMER } from "@/lib/constants";
-import type { Exercise, MuscleGroup } from "@/lib/types";
+import { getProgressiveOverload } from "@/lib/workout-engine";
+import { SPLIT_GROUPS, DEFAULT_REST_TIMER } from "@/lib/constants";
+import type { Exercise, MuscleGroup, WorkoutSplit } from "@/lib/types";
 
 export default function ActiveWorkoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center min-h-dvh">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-text-muted">Setting up your workout...</p>
+          </div>
+        </div>
+      }
+    >
+      <ActiveWorkoutContent />
+    </Suspense>
+  );
+}
+
+function ActiveWorkoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   useWakeLock();
 
-  const [muscleGroups, setMuscleGroups] = useState<string[]>([]);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [notes, setNotes] = useState("");
   const [elapsedDisplay, setElapsedDisplay] = useState("0:00");
   const hasInitialized = useRef(false);
 
-  const workout = useActiveWorkout(muscleGroups);
+  const workout = useActiveWorkout();
 
   const restTimer = useRestTimer({
-    onComplete: () => {
-      // Rest done — do nothing special, overlay will close
-    },
+    onComplete: () => {},
   });
 
   // Elapsed time display
@@ -66,93 +81,70 @@ export default function ActiveWorkoutPage() {
       const saved = workout.getRecoverableSession();
       if (saved) {
         workout.restoreSession(saved);
-        setMuscleGroups(saved.muscleGroups);
         setIsInitializing(false);
         return;
       }
 
-      // Read config from sessionStorage (set by pre-workout page)
-      const configStr = sessionStorage.getItem("workout-config");
-      if (!configStr) {
+      // Read split from URL params
+      const splitParam = searchParams.get("split") as WorkoutSplit | null;
+      if (!splitParam || !SPLIT_GROUPS[splitParam]) {
         router.replace("/dashboard");
         return;
       }
 
-      const config = JSON.parse(configStr) as {
-        muscleGroups: string[];
-        exerciseIds: string[];
-      };
-      setMuscleGroups(config.muscleGroups);
-
-      // Fetch exercise details from Supabase (client-side)
-      const { createClient } = await import("@/lib/supabase/client");
-      const supabase = createClient();
-
-      const { data: exerciseData } = await supabase
-        .from("exercises")
-        .select("*")
-        .in("id", config.exerciseIds);
-
-      if (!exerciseData || exerciseData.length === 0) {
-        router.replace("/dashboard");
-        return;
-      }
-
-      // Order exercises to match the config order
-      const ordered = config.exerciseIds
-        .map((id) => exerciseData.find((e) => e.id === id))
-        .filter(Boolean) as Exercise[];
-
-      setExercises(ordered);
+      const muscleGroups = SPLIT_GROUPS[splitParam] as MuscleGroup[];
 
       // Create session in DB
-      const sessionId = await createWorkoutSession(config.muscleGroups as MuscleGroup[]);
+      const sessionId = await createWorkoutSession(muscleGroups);
 
-      // Fetch progressive overload data for each exercise
-      const overloadMap = new Map<string, any>();
-      await Promise.all(
-        ordered.map(async (exercise) => {
-          try {
-            const history = await getExerciseHistory(exercise.id);
-            if (history.length > 0) {
-              const summarized = history.map((h: any) => ({
-                weight: Math.max(...h.sets.map((s: any) => s.actual_weight ?? 0)),
-                reps: h.sets.map((s: any) => s.actual_reps ?? 0),
-                date: h.date,
-              }));
-              const overload = getProgressiveOverload(summarized);
-              if (overload) {
-                overloadMap.set(exercise.id, overload);
-              }
-            }
-          } catch {
-            // Skip overload for this exercise
-          }
-        })
-      );
-
-      // Create exercise logs
-      const logIds: string[] = [];
-      for (let i = 0; i < ordered.length; i++) {
-        const logId = await createExerciseLog(sessionId, ordered[i].id, i);
-        logIds.push(logId);
-      }
-
-      // Initialize the workout state
-      workout.initializeWorkout(sessionId, ordered, overloadMap);
-
-      // Set exercise log IDs
-      logIds.forEach((logId, i) => {
-        workout.dispatch({ type: "SET_EXERCISE_LOG_ID", exerciseIndex: i, logId });
+      // Initialize empty workout
+      workout.dispatch({
+        type: "INIT",
+        sessionId,
+        split: splitParam,
+        muscleGroups,
       });
 
-      // Clean up config
-      sessionStorage.removeItem("workout-config");
       setIsInitializing(false);
     }
 
     init();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle adding an exercise from the picker
+  const handleAddExercise = useCallback(
+    async (exercise: Exercise) => {
+      if (!workout.state.sessionId) return;
+
+      // Create exercise log + fetch history in parallel
+      const [logId, history] = await Promise.all([
+        createExerciseLog(
+          workout.state.sessionId,
+          exercise.id,
+          workout.state.exercises.length
+        ),
+        getExerciseHistory(exercise.id).catch(() => []),
+      ]);
+
+      // Calculate progressive overload
+      let overload = null;
+      if (history.length > 0) {
+        const summarized = history
+          .filter((h: any) => h.sets && h.sets.length > 0)
+          .map((h: any) => ({
+            weight: Math.max(...h.sets.map((s: any) => s.actual_weight ?? 0)),
+            reps: h.sets.map((s: any) => s.actual_reps ?? 0),
+            date: h.date,
+          }));
+        if (summarized.length > 0) {
+          overload = getProgressiveOverload(summarized);
+        }
+      }
+
+      workout.addExercise(exercise, logId, overload);
+    },
+    [workout]
+  );
 
   // Handle completing a set
   const handleCompleteSet = useCallback(
@@ -171,12 +163,9 @@ export default function ActiveWorkoutPage() {
           set.actualWeight ?? set.targetWeight,
           set.targetReps,
           set.actualReps ?? set.targetReps
-        ).catch(() => {
-          // Silent fail — data is in sessionStorage
-        });
+        ).catch(() => {});
       }
 
-      // Start rest timer
       restTimer.start(DEFAULT_REST_TIMER);
     },
     [workout, restTimer]
@@ -185,6 +174,7 @@ export default function ActiveWorkoutPage() {
   // Handle completing workout
   const handleComplete = useCallback(async () => {
     workout.dispatch({ type: "COMPLETE_WORKOUT" });
+    setShowEndConfirm(false);
     setShowComplete(true);
 
     if (workout.state.sessionId) {
@@ -206,7 +196,9 @@ export default function ActiveWorkoutPage() {
   }
 
   const currentEx = workout.currentExercise;
-  const nextEx = workout.state.exercises[workout.state.currentExerciseIndex + 1] ?? null;
+  const splitMuscleGroups = (workout.state.split
+    ? SPLIT_GROUPS[workout.state.split]
+    : []) as MuscleGroup[];
 
   return (
     <div className="flex flex-col min-h-dvh pb-20 bg-bg-primary">
@@ -214,112 +206,160 @@ export default function ActiveWorkoutPage() {
       <header className="flex items-center justify-between px-4 py-3 border-b border-border">
         <button
           type="button"
-          onClick={() => setShowEndConfirm(true)}
+          onClick={() => {
+            if (workout.hasExercises) {
+              setShowEndConfirm(true);
+            } else {
+              workout.dispatch({ type: "COMPLETE_WORKOUT" });
+              router.push("/dashboard");
+            }
+          }}
           className="text-sm text-text-muted active:text-text-primary select-none touch-manipulation"
         >
           End
         </button>
         <div className="text-center">
           <p className="text-xs text-text-dim">
-            Exercise {workout.state.currentExerciseIndex + 1} of {workout.state.exercises.length}
+            {workout.state.split} Body
           </p>
           <p className="text-sm font-medium text-text-primary tabular-nums">{elapsedDisplay}</p>
         </div>
-        <div className="w-10" /> {/* Spacer for centering */}
+        <div className="w-10" />
       </header>
 
-      {/* Exercise navigation dots */}
-      <div className="flex justify-center gap-1.5 py-3">
-        {workout.state.exercises.map((ex, i) => {
-          const allComplete = ex.sets.every((s) => s.isCompleted);
-          const someComplete = ex.sets.some((s) => s.isCompleted);
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={() => workout.dispatch({ type: "GO_TO_EXERCISE", index: i })}
-              className={`w-2.5 h-2.5 rounded-full transition-colors touch-manipulation
-                ${
-                  i === workout.state.currentExerciseIndex
-                    ? "bg-accent scale-125"
-                    : allComplete
-                      ? "bg-success"
-                      : someComplete
-                        ? "bg-accent/40"
-                        : "bg-bg-elevated"
-                }`}
-            />
-          );
-        })}
-      </div>
+      {/* Exercise tabs - scrollable pills */}
+      {workout.hasExercises && (
+        <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-none">
+          {workout.state.exercises.map((ex, i) => {
+            const allComplete = ex.sets.every((s) => s.isCompleted);
+            const isCurrent = i === workout.state.currentExerciseIndex;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => workout.dispatch({ type: "GO_TO_EXERCISE", index: i })}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors select-none touch-manipulation
+                  ${
+                    isCurrent
+                      ? "bg-accent text-white"
+                      : allComplete
+                        ? "bg-[#7EBF8E]/20 text-[#4E8F5E]"
+                        : "bg-bg-elevated text-text-muted"
+                  }`}
+              >
+                {ex.exercise.name.length > 15
+                  ? ex.exercise.name.slice(0, 15) + "…"
+                  : ex.exercise.name}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setShowExercisePicker(true)}
+            className="shrink-0 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-xs font-medium select-none touch-manipulation"
+          >
+            + Add
+          </button>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="flex-1 px-4 pb-24 overflow-y-auto">
-        {currentEx && (
-          <ActiveExercise
-            exerciseState={currentEx}
-            exerciseIndex={workout.state.currentExerciseIndex}
-            onUpdateWeight={(setIndex, value) =>
-              workout.dispatch({
-                type: "UPDATE_SET",
-                exerciseIndex: workout.state.currentExerciseIndex,
-                setIndex,
-                field: "actualWeight",
-                value,
-              })
-            }
-            onUpdateReps={(setIndex, value) =>
-              workout.dispatch({
-                type: "UPDATE_SET",
-                exerciseIndex: workout.state.currentExerciseIndex,
-                setIndex,
-                field: "actualReps",
-                value,
-              })
-            }
-            onCompleteSet={handleCompleteSet}
-            onAddSet={() =>
-              workout.dispatch({
-                type: "ADD_SET",
-                exerciseIndex: workout.state.currentExerciseIndex,
-              })
-            }
-          />
-        )}
+        {!workout.hasExercises ? (
+          /* Empty state */
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-text-muted mb-2">No exercises yet</p>
+            <p className="text-text-dim text-sm mb-8">
+              Tap below to add your first exercise
+            </p>
+            <Button
+              size="lg"
+              onClick={() => setShowExercisePicker(true)}
+            >
+              + Add Exercise
+            </Button>
+          </div>
+        ) : currentEx ? (
+          <>
+            <ActiveExercise
+              exerciseState={currentEx}
+              exerciseIndex={workout.state.currentExerciseIndex}
+              onUpdateWeight={(setIndex, value) =>
+                workout.dispatch({
+                  type: "UPDATE_SET",
+                  exerciseIndex: workout.state.currentExerciseIndex,
+                  setIndex,
+                  field: "actualWeight",
+                  value,
+                })
+              }
+              onUpdateReps={(setIndex, value) =>
+                workout.dispatch({
+                  type: "UPDATE_SET",
+                  exerciseIndex: workout.state.currentExerciseIndex,
+                  setIndex,
+                  field: "actualReps",
+                  value,
+                })
+              }
+              onCompleteSet={handleCompleteSet}
+              onAddSet={() =>
+                workout.dispatch({
+                  type: "ADD_SET",
+                  exerciseIndex: workout.state.currentExerciseIndex,
+                })
+              }
+            />
 
-        {/* Navigation buttons */}
-        <div className="flex gap-3 mt-6">
-          {workout.state.currentExerciseIndex > 0 && (
-            <Button
-              variant="secondary"
-              className="flex-1"
-              onClick={() => workout.dispatch({ type: "PREV_EXERCISE" })}
-            >
-              Previous
-            </Button>
-          )}
-          {workout.isLastExercise ? (
-            <Button className="flex-1" onClick={handleComplete}>
-              Finish Workout
-            </Button>
-          ) : (
-            <Button
-              className="flex-1"
-              onClick={() => workout.dispatch({ type: "NEXT_EXERCISE" })}
-            >
-              Next Exercise
-            </Button>
-          )}
-        </div>
+            {/* Navigation + Add buttons */}
+            <div className="flex gap-3 mt-6">
+              {workout.state.currentExerciseIndex > 0 && (
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => workout.dispatch({ type: "PREV_EXERCISE" })}
+                >
+                  Previous
+                </Button>
+              )}
+              {!workout.isLastExercise && (
+                <Button
+                  className="flex-1"
+                  onClick={() => workout.dispatch({ type: "NEXT_EXERCISE" })}
+                >
+                  Next
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowExercisePicker(true)}
+              >
+                + Add
+              </Button>
+            </div>
+
+            {/* Finish button when on last exercise */}
+            {workout.isLastExercise && (
+              <Button
+                className="w-full mt-3"
+                onClick={handleComplete}
+              >
+                Finish Workout
+              </Button>
+            )}
+          </>
+        ) : null}
       </div>
 
-      {/* Next up preview */}
-      {!restTimer.isRunning && nextEx && (
-        <NextUpPreview
-          nextExercise={nextEx}
-          onSkipTo={() => workout.dispatch({ type: "NEXT_EXERCISE" })}
-        />
-      )}
+      {/* Exercise Picker Drawer */}
+      <ExercisePickerDrawer
+        isOpen={showExercisePicker}
+        onClose={() => setShowExercisePicker(false)}
+        onSelect={handleAddExercise}
+        splitMuscleGroups={splitMuscleGroups}
+        alreadyAddedIds={workout.state.exercises.map((ex) => ex.exercise.id)}
+      />
 
       {/* Rest timer overlay */}
       <RestTimerOverlay

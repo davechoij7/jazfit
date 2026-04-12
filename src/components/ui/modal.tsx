@@ -28,7 +28,7 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-[60] flex items-end justify-center"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}

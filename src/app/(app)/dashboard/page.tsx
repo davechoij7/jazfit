@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { suggestMuscleGroup } from "@/lib/workout-engine";
+import { suggestSplit } from "@/lib/workout-engine";
 import { DashboardContent } from "@/components/workout/dashboard-content";
-import { HISTORY_LOOKBACK_DAYS } from "@/lib/constants";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -18,25 +17,22 @@ export default async function DashboardPage() {
 
   const hasExercises = (count ?? 0) > 0;
 
-  // Fetch recent sessions for workout routing
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - HISTORY_LOOKBACK_DAYS);
-
+  // Fetch recent sessions for split suggestion + recent workouts list
   const { data: recentSessions } = await supabase
     .from("workout_sessions")
     .select("id, date, muscle_groups_focus, duration_seconds")
     .eq("user_id", user!.id)
     .not("completed_at", "is", null)
-    .gte("date", cutoffDate.toISOString().split("T")[0])
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .limit(10);
 
-  const suggestion = suggestMuscleGroup(recentSessions ?? []);
+  const suggestedSplit = suggestSplit(recentSessions ?? []);
 
   return (
     <DashboardContent
-      suggestion={suggestion}
       recentSessions={recentSessions ?? []}
       hasExercises={hasExercises}
+      suggestedSplit={suggestedSplit}
     />
   );
 }

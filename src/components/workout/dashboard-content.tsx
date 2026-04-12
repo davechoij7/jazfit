@@ -5,41 +5,27 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MuscleGroupCard } from "./muscle-group-card";
-import { MUSCLE_GROUP_COLORS, SYNERGY_GROUPS } from "@/lib/constants";
-import type {
-  MuscleGroup,
-  MuscleGroupSuggestion,
-  WorkoutSession,
-} from "@/lib/types";
+import { SPLIT_GROUPS, MUSCLE_GROUP_COLORS } from "@/lib/constants";
+import type { MuscleGroup, WorkoutSession, WorkoutSplit } from "@/lib/types";
 
 interface DashboardContentProps {
-  suggestion: MuscleGroupSuggestion;
   recentSessions: Pick<
     WorkoutSession,
     "id" | "date" | "muscle_groups_focus" | "duration_seconds"
   >[];
   hasExercises: boolean;
+  suggestedSplit: WorkoutSplit;
 }
 
+const SPLIT_OPTIONS: WorkoutSplit[] = ["Upper", "Lower"];
+
 export function DashboardContent({
-  suggestion,
   recentSessions,
   hasExercises,
+  suggestedSplit,
 }: DashboardContentProps) {
-  const [selectedPrimary, setSelectedPrimary] = useState<MuscleGroup>(
-    suggestion.primary
-  );
-
-  // Find the synergy group for the selected primary
-  const synergy = SYNERGY_GROUPS.find((sg) => sg.primary === selectedPrimary);
-  const targetGroups = synergy
-    ? [synergy.primary, ...synergy.secondary]
-    : [selectedPrimary];
-
-  const handleGroupSelect = (group: MuscleGroup) => {
-    setSelectedPrimary(group);
-  };
+  const [selectedSplit, setSelectedSplit] =
+    useState<WorkoutSplit>(suggestedSplit);
 
   if (!hasExercises) {
     return (
@@ -73,44 +59,63 @@ export function DashboardContent({
         </h1>
       </div>
 
-      {/* Suggestion Card */}
-      <Card padding="lg">
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            {targetGroups.map((g) => (
-              <Badge
-                key={g}
-                colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}
-              >
-                {g}
-              </Badge>
-            ))}
-          </div>
-          <p className="text-text-muted text-sm">{suggestion.reasoning}</p>
-          <Link href={`/workout?groups=${targetGroups.join(",")}`}>
-            <Button size="lg" className="w-full mt-2">
-              Start Workout
-            </Button>
-          </Link>
-        </div>
-      </Card>
+      {/* Split Picker */}
+      <div className="space-y-3">
+        {SPLIT_OPTIONS.map((split) => {
+          const isSelected = split === selectedSplit;
+          const isSuggested = split === suggestedSplit;
+          const muscles = SPLIT_GROUPS[split];
 
-      {/* Muscle Group Grid (override) */}
-      <div>
-        <h2 className="text-sm font-medium text-text-muted mb-3 tracking-wide">
-          Or choose a different focus
-        </h2>
-        <div className="grid grid-cols-4 gap-2">
-          {suggestion.allGroupStats.map((stat) => (
-            <MuscleGroupCard
-              key={stat.group}
-              stat={stat}
-              isSelected={stat.group === selectedPrimary}
-              onSelect={handleGroupSelect}
-            />
-          ))}
-        </div>
+          return (
+            <button
+              key={split}
+              type="button"
+              className="w-full text-left"
+              onClick={() => setSelectedSplit(split)}
+            >
+              <Card
+                padding="lg"
+                className={`min-h-[80px] transition-all ${
+                  isSelected
+                    ? "ring-2 ring-accent border-accent"
+                    : "opacity-60"
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-display font-normal text-text-primary">
+                      {split} Body
+                    </span>
+                    {isSuggested && (
+                      <Badge size="sm" colorClass="bg-accent/20 text-accent">
+                        Suggested
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {muscles.map((g) => (
+                      <Badge
+                        key={g}
+                        size="sm"
+                        colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}
+                      >
+                        {g}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </button>
+          );
+        })}
       </div>
+
+      {/* Start Workout */}
+      <Link href={`/workout/active?split=${selectedSplit}`}>
+        <Button size="lg" className="w-full">
+          Start Workout
+        </Button>
+      </Link>
 
       {/* Recent Activity */}
       {recentSessions.length > 0 && (

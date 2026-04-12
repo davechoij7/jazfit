@@ -28,6 +28,12 @@ export const SYNERGY_GROUPS: { name: string; primary: MuscleGroup; secondary: Mu
   { name: "Core", primary: "Core", secondary: [] },
 ];
 
+// Upper/Lower split groupings
+export const SPLIT_GROUPS: Record<import("./types").WorkoutSplit, MuscleGroup[]> = {
+  Upper: ["Chest", "Back", "Shoulders", "Biceps", "Triceps"],
+  Lower: ["Legs", "Glutes", "Core"],
+};
+
 // Minimum hours before a muscle group can be trained again
 export const RECOVERY_WINDOW_HOURS = 48;
 

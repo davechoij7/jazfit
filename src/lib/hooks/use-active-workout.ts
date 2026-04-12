@@ -1,7 +1,7 @@
 "use client";
 
 import { useReducer, useEffect, useCallback, useRef } from "react";
-import type { Exercise, ActiveSet } from "@/lib/types";
+import type { Exercise, ActiveSet, WorkoutSplit } from "@/lib/types";
 import { DEFAULT_SETS_PER_EXERCISE, DEFAULT_REPS_PER_SET } from "@/lib/constants";
 
 // --- State ---
@@ -19,6 +19,7 @@ export interface WorkoutExerciseState {
 
 export interface ActiveWorkoutState {
   sessionId: string | null;
+  split: WorkoutSplit | null;
   muscleGroups: string[];
   exercises: WorkoutExerciseState[];
   currentExerciseIndex: number;
@@ -29,7 +30,8 @@ export interface ActiveWorkoutState {
 // --- Actions ---
 
 type Action =
-  | { type: "INIT"; sessionId: string; exercises: WorkoutExerciseState[] }
+  | { type: "INIT"; sessionId: string; split: WorkoutSplit; muscleGroups: string[] }
+  | { type: "ADD_EXERCISE"; exercise: Exercise; exerciseLogId: string | null; previousWeight: number | null; previousReps: number[] | null; suggestedWeight: number | null; shouldProgress: boolean; progressMessage: string | null }
   | { type: "SET_EXERCISE_LOG_ID"; exerciseIndex: number; logId: string }
   | { type: "UPDATE_SET"; exerciseIndex: number; setIndex: number; field: "actualWeight" | "actualReps"; value: number }
   | { type: "COMPLETE_SET"; exerciseIndex: number; setIndex: number }
@@ -46,10 +48,45 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       return {
         ...state,
         sessionId: action.sessionId,
-        exercises: action.exercises,
+        split: action.split,
+        muscleGroups: action.muscleGroups,
+        exercises: [],
         status: "active",
         startedAt: Date.now(),
+        currentExerciseIndex: 0,
       };
+
+    case "ADD_EXERCISE": {
+      const targetWeight = action.suggestedWeight ?? action.previousWeight;
+
+      const sets: ActiveSet[] = Array.from({ length: DEFAULT_SETS_PER_EXERCISE }, (_, i) => ({
+        id: crypto.randomUUID(),
+        setNumber: i + 1,
+        targetWeight,
+        targetReps: DEFAULT_REPS_PER_SET,
+        actualWeight: null,
+        actualReps: null,
+        isCompleted: false,
+      }));
+
+      const newExercise: WorkoutExerciseState = {
+        exercise: action.exercise,
+        exerciseLogId: action.exerciseLogId,
+        sets,
+        previousWeight: action.previousWeight,
+        previousReps: action.previousReps,
+        suggestedWeight: action.suggestedWeight,
+        shouldProgress: action.shouldProgress,
+        progressMessage: action.progressMessage,
+      };
+
+      const exercises = [...state.exercises, newExercise];
+      return {
+        ...state,
+        exercises,
+        currentExerciseIndex: exercises.length - 1,
+      };
+    }
 
     case "SET_EXERCISE_LOG_ID": {
       const exercises = [...state.exercises];
@@ -139,10 +176,11 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
 
 // --- Initial state ---
 
-function createInitialState(muscleGroups: string[]): ActiveWorkoutState {
+function createInitialState(): ActiveWorkoutState {
   return {
     sessionId: null,
-    muscleGroups,
+    split: null,
+    muscleGroups: [],
     exercises: [],
     currentExerciseIndex: 0,
     startedAt: Date.now(),
@@ -154,8 +192,8 @@ function createInitialState(muscleGroups: string[]): ActiveWorkoutState {
 
 const STORAGE_KEY = "jazfit-active-workout";
 
-export function useActiveWorkout(muscleGroups: string[]) {
-  const [state, dispatch] = useReducer(reducer, muscleGroups, createInitialState);
+export function useActiveWorkout() {
+  const [state, dispatch] = useReducer(reducer, null, createInitialState);
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -195,40 +233,18 @@ export function useActiveWorkout(muscleGroups: string[]) {
     sessionStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  // Build exercise states from exercise list + overload data
-  const initializeWorkout = useCallback(
-    (
-      sessionId: string,
-      exercises: Exercise[],
-      overloadData: Map<string, { weight: number; reps: number[]; suggestedWeight: number; shouldProgress: boolean; message: string }>
-    ) => {
-      const exerciseStates: WorkoutExerciseState[] = exercises.map((exercise) => {
-        const overload = overloadData.get(exercise.id);
-        const targetWeight = overload?.suggestedWeight ?? overload?.weight ?? null;
-
-        const sets: ActiveSet[] = Array.from({ length: DEFAULT_SETS_PER_EXERCISE }, (_, i) => ({
-          id: crypto.randomUUID(),
-          setNumber: i + 1,
-          targetWeight,
-          targetReps: DEFAULT_REPS_PER_SET,
-          actualWeight: null,
-          actualReps: null,
-          isCompleted: false,
-        }));
-
-        return {
-          exercise,
-          exerciseLogId: null,
-          sets,
-          previousWeight: overload?.weight ?? null,
-          previousReps: overload?.reps ?? null,
-          suggestedWeight: overload?.suggestedWeight ?? null,
-          shouldProgress: overload?.shouldProgress ?? false,
-          progressMessage: overload?.message ?? null,
-        };
+  const addExercise = useCallback(
+    (exercise: Exercise, exerciseLogId: string | null, overload: { lastWeight: number; lastReps: number[]; suggestedWeight: number; shouldProgress: boolean; message: string } | null) => {
+      dispatch({
+        type: "ADD_EXERCISE",
+        exercise,
+        exerciseLogId,
+        previousWeight: overload?.lastWeight ?? null,
+        previousReps: overload?.lastReps ?? null,
+        suggestedWeight: overload?.suggestedWeight ?? null,
+        shouldProgress: overload?.shouldProgress ?? false,
+        progressMessage: overload?.message ?? null,
       });
-
-      dispatch({ type: "INIT", sessionId, exercises: exerciseStates });
     },
     []
   );
@@ -236,7 +252,8 @@ export function useActiveWorkout(muscleGroups: string[]) {
   return {
     state,
     dispatch,
-    initializeWorkout,
+    addExercise,
+    hasExercises: state.exercises.length > 0,
     getRecoverableSession,
     restoreSession,
     clearSavedSession,
