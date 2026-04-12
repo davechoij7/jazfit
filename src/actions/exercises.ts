@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { MuscleGroup } from "@/lib/types";
+import type { Exercise, MuscleGroup, EquipmentType } from "@/lib/types";
 
 export async function getUserExercisesForGroups(muscleGroups: MuscleGroup[]) {
   const supabase = await createClient();
@@ -29,6 +29,41 @@ export async function getUserExercisesForGroups(muscleGroups: MuscleGroup[]) {
       exercise_id: ue.exercise_id,
       exercise: ue.exercises,
     }));
+}
+
+export async function createCustomExercise(
+  name: string,
+  muscleGroups: MuscleGroup[],
+  equipmentType: EquipmentType
+): Promise<Exercise> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Insert the exercise
+  const { data: exercise, error } = await supabase
+    .from("exercises")
+    .insert({
+      name: name.trim(),
+      muscle_groups: muscleGroups,
+      equipment_type: equipmentType,
+      is_default: false,
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  // Link to user's exercise pool
+  await supabase.from("user_exercises").insert({
+    user_id: user.id,
+    exercise_id: exercise.id,
+    is_available: true,
+  });
+
+  return exercise as Exercise;
 }
 
 export async function getRecentSessions(days: number = 14) {

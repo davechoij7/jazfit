@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
-import { getUserExercisesForGroups } from "@/actions/exercises";
+import { Button } from "@/components/ui/button";
+import { getUserExercisesForGroups, createCustomExercise } from "@/actions/exercises";
 import {
   MUSCLE_GROUP_COLORS,
   EQUIPMENT_LABELS,
+  EQUIPMENT_TYPES,
   MUSCLE_GROUPS,
 } from "@/lib/constants";
-import type { Exercise, MuscleGroup } from "@/lib/types";
+import type { Exercise, MuscleGroup, EquipmentType } from "@/lib/types";
 
 interface ExercisePickerDrawerProps {
   isOpen: boolean;
@@ -30,12 +32,14 @@ export function ExercisePickerDrawer({
   const [collapsedGroups, setCollapsedGroups] = useState<Set<MuscleGroup>>(
     new Set()
   );
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
 
     let cancelled = false;
     setLoading(true);
+    setShowCreateForm(false);
 
     getUserExercisesForGroups(splitMuscleGroups).then((data) => {
       if (cancelled) return;
@@ -79,14 +83,41 @@ export function ExercisePickerDrawer({
     onClose();
   }
 
+  async function handleCreate(name: string, muscleGroup: MuscleGroup, equipmentType: EquipmentType) {
+    const exercise = await createCustomExercise(name, [muscleGroup], equipmentType);
+    onSelect(exercise);
+    onClose();
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add Exercise">
+      {/* Create New toggle */}
+      {!showCreateForm && !loading && (
+        <button
+          type="button"
+          onClick={() => setShowCreateForm(true)}
+          className="w-full text-left px-3 py-3 mb-2 rounded-xl bg-accent/10 text-accent text-sm font-medium select-none touch-manipulation active:bg-accent/20 transition-colors"
+        >
+          + Create New Exercise
+        </button>
+      )}
+
+      {/* Inline creation form */}
+      {showCreateForm && (
+        <CreateExerciseForm
+          defaultMuscleGroup={splitMuscleGroups[0]}
+          onSave={handleCreate}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      )}
+
+      {/* Exercise list */}
       <div className="overflow-y-auto max-h-[60vh] -mx-1">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
           </div>
-        ) : orderedGroups.length === 0 ? (
+        ) : orderedGroups.length === 0 && !showCreateForm ? (
           <p className="text-center text-text-muted py-8 text-sm">
             No exercises available for this split.
           </p>
@@ -177,5 +208,90 @@ export function ExercisePickerDrawer({
         )}
       </div>
     </Modal>
+  );
+}
+
+// --- Inline creation form ---
+
+function CreateExerciseForm({
+  defaultMuscleGroup,
+  onSave,
+  onCancel,
+}: {
+  defaultMuscleGroup: MuscleGroup;
+  onSave: (name: string, muscleGroup: MuscleGroup, equipmentType: EquipmentType) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [muscleGroup, setMuscleGroup] = useState<MuscleGroup>(defaultMuscleGroup);
+  const [equipmentType, setEquipmentType] = useState<EquipmentType>("machine");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave(name, muscleGroup, equipmentType);
+    } catch (err: any) {
+      setError(err.message?.includes("unique") ? "Exercise name already exists" : "Failed to create exercise");
+      setSaving(false);
+    }
+  }
+
+  const selectClasses =
+    "w-full rounded-lg bg-bg-elevated border border-border px-3 py-2.5 text-sm text-text-primary min-h-12 appearance-none";
+
+  return (
+    <form onSubmit={handleSubmit} className="mb-4 p-3 rounded-xl bg-bg-elevated/50 border border-border space-y-3">
+      <input
+        type="text"
+        placeholder="Exercise name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        autoFocus
+        className="w-full rounded-lg bg-bg-elevated border border-border px-3 py-2.5 text-sm text-text-primary placeholder:text-text-dim min-h-12"
+      />
+
+      <div className="grid grid-cols-2 gap-2">
+        <select
+          value={muscleGroup}
+          onChange={(e) => setMuscleGroup(e.target.value as MuscleGroup)}
+          className={selectClasses}
+        >
+          {MUSCLE_GROUPS.map((mg) => (
+            <option key={mg} value={mg}>{mg}</option>
+          ))}
+        </select>
+
+        <select
+          value={equipmentType}
+          onChange={(e) => setEquipmentType(e.target.value as EquipmentType)}
+          className={selectClasses}
+        >
+          {EQUIPMENT_TYPES.map((et) => (
+            <option key={et} value={et}>{EQUIPMENT_LABELS[et]}</option>
+          ))}
+        </select>
+      </div>
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 min-h-12 rounded-lg text-sm text-text-muted active:bg-bg-elevated select-none touch-manipulation"
+        >
+          Cancel
+        </button>
+        <Button type="submit" className="flex-1" disabled={!name.trim() || saving}>
+          {saving ? "Saving..." : "Save"}
+        </Button>
+      </div>
+    </form>
   );
 }
