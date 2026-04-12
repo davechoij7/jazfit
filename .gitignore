@@ -39,7 +39,7 @@ yarn-error.log*
 
 # test artifacts
 .playwright-mcp/
-*.png
+/jazfit-*.png
 
 # typescript
 *.tsbuildinfo

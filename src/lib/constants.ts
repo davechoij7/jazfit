@@ -46,6 +46,21 @@ export const PROGRESSION_THRESHOLD_SESSIONS = 2;
 // Default weight increment when suggesting progressive overload
 export const DEFAULT_WEIGHT_INCREMENT = 5; // lbs
 
+// Weight increment by equipment type (machine/cable plates are smaller)
+export const WEIGHT_INCREMENT_BY_EQUIPMENT: Record<EquipmentType, number> = {
+  barbell: 5,
+  dumbbell: 5,
+  cable: 2.5,
+  machine: 2.5,
+  bodyweight: 0,
+  band: 0,
+};
+
+/** Get the weight increment step for a given equipment type */
+export function getWeightIncrement(equipmentType: EquipmentType): number {
+  return WEIGHT_INCREMENT_BY_EQUIPMENT[equipmentType] ?? DEFAULT_WEIGHT_INCREMENT;
+}
+
 // Rest timer presets in seconds
 export const REST_TIMER_PRESETS = [60, 90, 120] as const;
 export const DEFAULT_REST_TIMER = 90;

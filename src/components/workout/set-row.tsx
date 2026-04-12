@@ -5,12 +5,13 @@ import type { ActiveSet } from "@/lib/types";
 
 interface SetRowProps {
   set: ActiveSet;
+  weightStep?: number;
   onUpdateWeight: (value: number) => void;
   onUpdateReps: (value: number) => void;
   onComplete: () => void;
 }
 
-export function SetRow({ set, onUpdateWeight, onUpdateReps, onComplete }: SetRowProps) {
+export function SetRow({ set, weightStep = 5, onUpdateWeight, onUpdateReps, onComplete }: SetRowProps) {
   return (
     <div
       className={`flex items-center gap-3 p-3 rounded-xl transition-colors
@@ -28,7 +29,7 @@ export function SetRow({ set, onUpdateWeight, onUpdateReps, onComplete }: SetRow
       <NumberInput
         value={set.isCompleted ? set.actualWeight : (set.actualWeight ?? set.targetWeight)}
         onChange={onUpdateWeight}
-        step={5}
+        step={weightStep}
         min={0}
         max={500}
         label="lbs"

@@ -6,6 +6,7 @@ import type {
   WorkoutSession,
   WorkoutSplit,
   SetLog,
+  EquipmentType,
 } from "./types";
 import {
   MUSCLE_GROUPS,
@@ -15,6 +16,7 @@ import {
   PROGRESSION_THRESHOLD_SESSIONS,
   DEFAULT_WEIGHT_INCREMENT,
   EXERCISES_PER_WORKOUT,
+  getWeightIncrement,
 } from "./constants";
 
 /**
@@ -126,7 +128,8 @@ export function selectExercises<
  * sessions at the same weight, suggest increasing by the default increment.
  */
 export function getProgressiveOverload(
-  sessionHistory: { weight: number; reps: number[]; date: string }[]
+  sessionHistory: { weight: number; reps: number[]; date: string }[],
+  equipmentType?: EquipmentType
 ): ProgressiveOverloadSuggestion | null {
   if (sessionHistory.length === 0) {
     return null;
@@ -158,8 +161,12 @@ export function getProgressiveOverload(
   const shouldProgress =
     consecutiveAtWeight >= PROGRESSION_THRESHOLD_SESSIONS && allHitTarget;
 
+  const increment = equipmentType
+    ? getWeightIncrement(equipmentType)
+    : DEFAULT_WEIGHT_INCREMENT;
+
   const suggestedWeight = shouldProgress
-    ? lastWeight + DEFAULT_WEIGHT_INCREMENT
+    ? lastWeight + increment
     : lastWeight;
 
   const message = shouldProgress

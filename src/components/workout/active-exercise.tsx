@@ -2,6 +2,7 @@
 
 import { SetRow } from "./set-row";
 import { Button } from "@/components/ui/button";
+import { getWeightIncrement } from "@/lib/constants";
 import type { WorkoutExerciseState } from "@/lib/hooks/use-active-workout";
 
 interface ActiveExerciseProps {
@@ -22,6 +23,7 @@ export function ActiveExercise({
   onAddSet,
 }: ActiveExerciseProps) {
   const { exercise, sets, progressMessage, shouldProgress } = exerciseState;
+  const weightStep = getWeightIncrement(exercise.equipment_type);
 
   return (
     <div className="space-y-4">
@@ -50,6 +52,7 @@ export function ActiveExercise({
           <SetRow
             key={set.id}
             set={set}
+            weightStep={weightStep}
             onUpdateWeight={(v) => onUpdateWeight(i, v)}
             onUpdateReps={(v) => onUpdateReps(i, v)}
             onComplete={() => onCompleteSet(i)}

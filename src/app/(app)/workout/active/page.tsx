@@ -137,7 +137,7 @@ function ActiveWorkoutContent() {
             date: h.date,
           }));
         if (summarized.length > 0) {
-          overload = getProgressiveOverload(summarized);
+          overload = getProgressiveOverload(summarized, exercise.equipment_type);
         }
       }
 
