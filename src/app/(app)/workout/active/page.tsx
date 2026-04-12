@@ -421,7 +421,7 @@ function ActiveWorkoutContent() {
           </div>
 
           <Button className="w-full" onClick={() => router.push("/history")}>
-            View History
+            Continue
           </Button>
           <Button variant="secondary" className="w-full" onClick={() => router.push("/dashboard")}>
             Back to Home
