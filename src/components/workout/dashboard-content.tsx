@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SPLIT_GROUPS, SPLIT_CATEGORIES, SPLIT_DESCRIPTIONS, MUSCLE_GROUP_COLORS, AFFIRMATIONS } from "@/lib/constants";
 import type { MuscleGroup, WorkoutSplit, StrengthSplit } from "@/lib/types";
+import type { DailyStep } from "@/actions/health";
+import { StepsCard } from "@/components/workout/steps-card";
 
 interface DashboardContentProps {
   hasExercises: boolean;
   suggestedSplit: WorkoutSplit;
+  weeklySteps: DailyStep[];
 }
 
 function getGreeting(): string {
@@ -27,6 +30,7 @@ function isStrengthSplit(s: WorkoutSplit): s is StrengthSplit {
 export function DashboardContent({
   hasExercises,
   suggestedSplit,
+  weeklySteps,
 }: DashboardContentProps) {
   const [selectedSplit, setSelectedSplit] =
     useState<WorkoutSplit>(suggestedSplit);
@@ -121,6 +125,9 @@ export function DashboardContent({
           Start Workout
         </Button>
       </Link>
+
+      {/* Steps card */}
+      <StepsCard data={weeklySteps} goal={10000} />
     </div>
   );
 }

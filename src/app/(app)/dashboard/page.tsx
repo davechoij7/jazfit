@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { suggestSplit } from "@/lib/workout-engine";
 import { DashboardContent } from "@/components/workout/dashboard-content";
+import { getLast7DaysSteps } from "@/actions/health";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -9,7 +10,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   // Run independent fetches in parallel
-  const [{ count }, { data: recentSessions }] = await Promise.all([
+  const [{ count }, { data: recentSessions }, weeklySteps] = await Promise.all([
     supabase
       .from("user_exercises")
       .select("*", { count: "exact", head: true })
@@ -22,6 +23,7 @@ export default async function DashboardPage() {
       .not("completed_at", "is", null)
       .order("date", { ascending: false })
       .limit(10),
+    getLast7DaysSteps(),
   ]);
 
   const hasExercises = (count ?? 0) > 0;
@@ -31,6 +33,7 @@ export default async function DashboardPage() {
     <DashboardContent
       hasExercises={hasExercises}
       suggestedSplit={suggestedSplit}
+      weeklySteps={weeklySteps}
     />
   );
 }

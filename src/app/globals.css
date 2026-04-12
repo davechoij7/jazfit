@@ -41,6 +41,18 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(251, 240, 240, 0.45), rgba(251, 240, 240, 0.45)),
+    url('/background.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
 /* Utility for safe area bottom padding (bottom nav, active workout) */
 .pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom), 16px);

@@ -89,8 +89,14 @@ export interface BodyMeasurement {
   waist: number | null;
   hips: number | null;
   chest: number | null;
+  /** @deprecated Use arms_left / arms_right instead */
   arms: number | null;
+  /** @deprecated Use thighs_left / thighs_right instead */
   thighs: number | null;
+  arms_left: number | null;
+  arms_right: number | null;
+  thighs_left: number | null;
+  thighs_right: number | null;
   created_at: string;
 }
 
