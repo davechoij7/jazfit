@@ -50,10 +50,11 @@ export async function POST(req: NextRequest) {
   const contentType = req.headers.get("content-type") ?? "";
   let records: StepRecord[];
 
-  if (contentType.includes("application/x-www-form-urlencoded")) {
+  if (contentType.includes("form")) {
     const form = await req.formData();
     const date = form.get("date");
-    const steps = Number(form.get("steps"));
+    const rawSteps = String(form.get("steps") ?? "").replace(/,/g, "");
+    const steps = Math.round(parseFloat(rawSteps));
     if (!date || typeof date !== "string" || isNaN(steps)) {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
     }
