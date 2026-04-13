@@ -46,26 +46,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // --- Parse body ---
-  let body: RequestBody;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-  }
+  // --- Parse body (accepts JSON array or form-encoded single record) ---
+  const contentType = req.headers.get("content-type") ?? "";
+  let records: StepRecord[];
 
-  if (
-    !body ||
-    !Array.isArray(body.data) ||
-    body.data.length === 0 ||
-    body.data.some(
-      (r) =>
-        typeof r.date !== "string" ||
-        typeof r.steps !== "number" ||
-        isNaN(r.steps)
-    )
-  ) {
-    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    const form = await req.formData();
+    const date = form.get("date");
+    const steps = Number(form.get("steps"));
+    if (!date || typeof date !== "string" || isNaN(steps)) {
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+    records = [{ date, steps }];
+  } else {
+    let body: RequestBody;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+    if (
+      !body ||
+      !Array.isArray(body.data) ||
+      body.data.length === 0 ||
+      body.data.some(
+        (r) =>
+          typeof r.date !== "string" ||
+          typeof r.steps !== "number" ||
+          isNaN(r.steps)
+      )
+    ) {
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+    records = body.data;
   }
 
   const userId = process.env.HEALTH_USER_ID;
@@ -79,7 +92,7 @@ export async function POST(req: NextRequest) {
   // --- Upsert ---
   const supabase = createServiceClient();
 
-  const rows = body.data.map((r) => ({
+  const rows = records.map((r) => ({
     user_id: userId,
     date: r.date,
     step_count: r.steps,
