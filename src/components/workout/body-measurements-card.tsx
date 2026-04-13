@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { BodyMeasurement } from "@/lib/types";
 
@@ -101,9 +102,16 @@ export function BodyMeasurementsCard({ measurements }: Props) {
       </h2>
 
       <div className="flex gap-4 items-start">
-        {/* SVG Silhouette */}
+        {/* Body image */}
         <div className="flex-shrink-0">
-          <BodySilhouette />
+          <Image
+            src="/betty-boop.png"
+            alt="Body silhouette"
+            width={160}
+            height={240}
+            className="opacity-75 pointer-events-none"
+            style={{ objectFit: "contain" }}
+          />
         </div>
 
         {/* Delta list */}
@@ -180,74 +188,3 @@ export function BodyMeasurementsCard({ measurements }: Props) {
   );
 }
 
-function BodySilhouette() {
-  // Female body silhouette — hourglass torso, separated legs, natural arms
-  // viewBox: 0 0 80 200 — head at top, feet at bottom
-  return (
-    <svg
-      width="80"
-      height="200"
-      viewBox="0 0 80 200"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      {/* Head */}
-      <ellipse cx="40" cy="14" rx="11" ry="13" fill="#E8A0AD" opacity="0.75" />
-
-      {/* Neck */}
-      <rect x="36" y="25" width="8" height="10" rx="3" fill="#E8A0AD" opacity="0.75" />
-
-      {/* Torso — shoulders (56px) → waist (30px) → hips (58px) */}
-      <path
-        d="M12 37 Q8 58 25 80 Q14 96 11 110 L69 110 Q66 96 55 80 Q72 58 68 37 Q56 28 40 26 Q24 28 12 37Z"
-        fill="#E8A0AD"
-        opacity="0.75"
-      />
-
-      {/* Left arm */}
-      <path
-        d="M13 40 Q5 62 7 80 Q7 92 9 100 Q12 104 16 100 Q17 92 16 78 Q18 58 20 43Z"
-        fill="#E8A0AD"
-        opacity="0.7"
-      />
-
-      {/* Right arm */}
-      <path
-        d="M67 40 Q75 62 73 80 Q73 92 71 100 Q68 104 64 100 Q63 92 64 78 Q62 58 60 43Z"
-        fill="#E8A0AD"
-        opacity="0.7"
-      />
-
-      {/* Left leg — outer hip x=11, inner x=34, with natural taper */}
-      <path
-        d="M11 110 Q10 140 12 165 Q13 178 15 190 Q18 196 22 196 Q26 196 28 190 Q30 178 31 165 Q33 140 34 110Z"
-        fill="#E8A0AD"
-        opacity="0.75"
-      />
-
-      {/* Right leg — inner x=46, outer hip x=69 */}
-      <path
-        d="M69 110 Q70 140 68 165 Q67 178 65 190 Q62 196 58 196 Q54 196 52 190 Q50 178 49 165 Q47 140 46 110Z"
-        fill="#E8A0AD"
-        opacity="0.75"
-      />
-
-      {/* Measurement indicator dots */}
-      {/* Chest */}
-      <circle cx="40" cy="50" r="2.5" fill="#C4808E" />
-      {/* Waist */}
-      <circle cx="40" cy="80" r="2.5" fill="#C4808E" />
-      {/* Hips */}
-      <circle cx="40" cy="106" r="2.5" fill="#C4808E" />
-      {/* Left arm */}
-      <circle cx="10" cy="62" r="2" fill="#7A3347" opacity="0.8" />
-      {/* Right arm */}
-      <circle cx="70" cy="62" r="2" fill="#7A3347" opacity="0.8" />
-      {/* Left thigh */}
-      <circle cx="21" cy="132" r="2" fill="#7A3347" opacity="0.8" />
-      {/* Right thigh */}
-      <circle cx="59" cy="132" r="2" fill="#7A3347" opacity="0.8" />
-    </svg>
-  );
-}
