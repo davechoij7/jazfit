@@ -20,6 +20,7 @@ interface MeasurementItem {
   label: string;
   latest: number | null;
   previous: number | null;
+  first: number | null;
 }
 
 function getDelta(latest: number | null, previous: number | null) {
@@ -36,6 +37,8 @@ function fmt(v: number | null) {
 export function BodyMeasurementsCard({ measurements }: Props) {
   const latest = measurements[0] ?? null;
   const previous = measurements[1] ?? null;
+  // Only show "from first" delta when there are 3+ entries (otherwise prev === first)
+  const first = measurements.length > 2 ? measurements[measurements.length - 1] : null;
 
   const items: MeasurementItem[] = [
     {
@@ -43,36 +46,42 @@ export function BodyMeasurementsCard({ measurements }: Props) {
       label: "Waist",
       latest: latest?.waist ?? null,
       previous: previous?.waist ?? null,
+      first: first?.waist ?? null,
     },
     {
       key: "hips",
       label: "Hips",
       latest: latest?.hips ?? null,
       previous: previous?.hips ?? null,
+      first: first?.hips ?? null,
     },
     {
       key: "arms_left",
       label: "Left arm",
       latest: latest?.arms_left ?? null,
       previous: previous?.arms_left ?? null,
+      first: first?.arms_left ?? null,
     },
     {
       key: "arms_right",
       label: "Right arm",
       latest: latest?.arms_right ?? null,
       previous: previous?.arms_right ?? null,
+      first: first?.arms_right ?? null,
     },
     {
       key: "thighs_left",
       label: "Left thigh",
       latest: latest?.thighs_left ?? null,
       previous: previous?.thighs_left ?? null,
+      first: first?.thighs_left ?? null,
     },
     {
       key: "thighs_right",
       label: "Right thigh",
       latest: latest?.thighs_right ?? null,
       previous: previous?.thighs_right ?? null,
+      first: first?.thighs_right ?? null,
     },
   ];
 
@@ -101,32 +110,45 @@ export function BodyMeasurementsCard({ measurements }: Props) {
         <div className="flex-1 space-y-2 min-w-0">
           {items.map((item) => {
             const delta = getDelta(item.latest, item.previous);
+            const deltaFirst = getDelta(item.latest, item.first);
             // Smaller circumference = good (shrinking)
             const isShrinking = delta !== null && delta < 0;
             const isSame = delta !== null && delta === 0;
+            const firstIsShrinking = deltaFirst !== null && deltaFirst < 0;
 
             return (
               <div key={item.key} className="flex items-center justify-between">
                 <span className="text-xs text-text-muted font-medium truncate pr-2">
                   {item.label}
                 </span>
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
                   <span className="text-sm font-medium text-text-primary">
                     {fmt(item.latest)}
                   </span>
                   {delta !== null && !isSame && (
                     <span
-                      className="text-xs font-medium"
+                      className="text-[10px] font-medium"
                       style={{
                         color: isShrinking ? "#7EBF8E" : "#D4A960",
                       }}
                     >
                       {isShrinking ? "↓" : "↑"}
-                      {Math.abs(delta)}"
+                      {Math.abs(delta)}" prev
                     </span>
                   )}
                   {delta !== null && isSame && (
                     <span className="text-xs text-text-dim">—</span>
+                  )}
+                  {deltaFirst !== null && deltaFirst !== 0 && (
+                    <span
+                      className="text-[10px] font-medium"
+                      style={{
+                        color: firstIsShrinking ? "#7EBF8E" : "#D4A960",
+                      }}
+                    >
+                      {firstIsShrinking ? "↓" : "↑"}
+                      {Math.abs(deltaFirst)}" start
+                    </span>
                   )}
                 </div>
               </div>
