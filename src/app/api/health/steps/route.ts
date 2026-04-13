@@ -52,12 +52,14 @@ export async function POST(req: NextRequest) {
 
   if (contentType.includes("form")) {
     const form = await req.formData();
+    const all: Record<string, string> = {};
+    form.forEach((v, k) => { all[k] = String(v); });
     const date = String(form.get("date") ?? "").trim();
     const rawSteps = String(form.get("steps") ?? "").replace(/,/g, "").trim();
     const steps = Math.round(parseFloat(rawSteps));
     if (!date || isNaN(steps)) {
       return NextResponse.json(
-        { error: "Invalid body", date, rawSteps },
+        { error: "Invalid body", receivedFields: all },
         { status: 400 }
       );
     }
