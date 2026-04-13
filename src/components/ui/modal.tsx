@@ -51,7 +51,7 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
         {title && (
           <h2 className="text-lg font-bold text-text-primary px-6 pb-4">{title}</h2>
         )}
-        <div className="px-6 pb-6">{children}</div>
+        <div className="px-6 pb-24 overflow-y-auto max-h-[80vh]">{children}</div>
       </div>
     </div>
   );
