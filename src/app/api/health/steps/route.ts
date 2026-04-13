@@ -46,40 +46,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // --- Parse body (accepts JSON array or form-encoded single record) ---
+  // --- Parse body: try form first, then JSON, echo debug info ---
   const contentType = req.headers.get("content-type") ?? "";
-  let records: StepRecord[];
+  let records: StepRecord[] | null = null;
+  let debugInfo: Record<string, unknown> = { contentType };
 
-  if (contentType.includes("form")) {
-    const form = await req.formData();
+  // Try form data
+  try {
+    const cloned = req.clone();
+    const form = await cloned.formData();
+    const entries: Record<string, string> = {};
+    form.forEach((v, k) => { entries[k] = String(v); });
+    debugInfo.formEntries = entries;
     const date = form.get("date");
-    const rawSteps = String(form.get("steps") ?? "").replace(/,/g, "");
+    const rawSteps = String(form.get("steps") ?? "").replace(/,/g, "").trim();
     const steps = Math.round(parseFloat(rawSteps));
-    if (!date || typeof date !== "string" || isNaN(steps)) {
-      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    if (date && typeof date === "string" && !isNaN(steps)) {
+      records = [{ date, steps }];
     }
-    records = [{ date, steps }];
-  } else {
-    let body: RequestBody;
+  } catch { /* not form data */ }
+
+  // Try JSON
+  if (!records) {
     try {
-      body = await req.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-    }
-    if (
-      !body ||
-      !Array.isArray(body.data) ||
-      body.data.length === 0 ||
-      body.data.some(
-        (r) =>
-          typeof r.date !== "string" ||
-          typeof r.steps !== "number" ||
-          isNaN(r.steps)
-      )
-    ) {
-      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-    }
-    records = body.data;
+      const cloned = req.clone();
+      const body: RequestBody = await cloned.json();
+      debugInfo.jsonBody = body;
+      if (body?.data?.length > 0) {
+        records = body.data.map((r) => ({
+          date: r.date,
+          steps: Math.round(parseFloat(String(r.steps).replace(/,/g, ""))),
+        }));
+      }
+    } catch { /* not json */ }
+  }
+
+  // Try raw text
+  if (!records) {
+    try {
+      const cloned = req.clone();
+      const text = await cloned.text();
+      debugInfo.rawText = text;
+    } catch { /* ignore */ }
+    return NextResponse.json({ error: "Invalid body", debug: debugInfo }, { status: 400 });
   }
 
   const userId = process.env.HEALTH_USER_ID;
