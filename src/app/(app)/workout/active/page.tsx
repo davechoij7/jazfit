@@ -16,6 +16,7 @@ import {
   createExerciseLog,
   logSet,
   completeWorkoutSession,
+  updateWorkoutDate,
   getExerciseHistory,
 } from "@/actions/workout";
 import { getProgressiveOverload } from "@/lib/workout-engine";
@@ -50,8 +51,13 @@ function ActiveWorkoutContent() {
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [notes, setNotes] = useState("");
   const [elapsedDisplay, setElapsedDisplay] = useState("0:00");
+  const [workoutDate, setWorkoutDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  });
   const hasInitialized = useRef(false);
   const elapsedSecondsRef = useRef(0);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const workout = useActiveWorkout();
 
@@ -99,8 +105,10 @@ function ActiveWorkoutContent() {
         ? []
         : SPLIT_GROUPS[splitParam as StrengthSplit];
 
-      // Create session in DB
-      const sessionId = await createWorkoutSession(muscleGroups, splitParam);
+      // Create session in DB (use local date, not UTC)
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const sessionId = await createWorkoutSession(muscleGroups, splitParam, localDate);
 
       // Initialize empty workout
       workout.dispatch({
@@ -239,6 +247,31 @@ function ActiveWorkoutContent() {
             {isNonStrength ? workout.state.split : `${workout.state.split} Body`}
           </p>
           <p className="text-sm font-medium text-text-primary tabular-nums">{elapsedDisplay}</p>
+          <button
+            type="button"
+            onClick={() => dateInputRef.current?.showPicker()}
+            className="text-[11px] text-accent font-medium mt-0.5 select-none touch-manipulation"
+          >
+            {new Date(workoutDate + "T00:00:00").toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })}
+          </button>
+          <input
+            ref={dateInputRef}
+            type="date"
+            value={workoutDate}
+            onChange={(e) => {
+              const newDate = e.target.value;
+              if (!newDate) return;
+              setWorkoutDate(newDate);
+              if (workout.state.sessionId) {
+                updateWorkoutDate(workout.state.sessionId, newDate).catch(() => {});
+              }
+            }}
+            className="sr-only"
+            tabIndex={-1}
+          />
         </div>
         <div className="w-10" />
       </header>

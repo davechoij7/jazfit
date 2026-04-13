@@ -6,7 +6,8 @@ import type { MuscleGroup, WorkoutSplit } from "@/lib/types";
 
 export async function createWorkoutSession(
   muscleGroups: MuscleGroup[],
-  workoutType: WorkoutSplit
+  workoutType: WorkoutSplit,
+  date?: string
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -16,7 +17,7 @@ export async function createWorkoutSession(
     .from("workout_sessions")
     .insert({
       user_id: user.id,
-      date: new Date().toISOString().split("T")[0],
+      date: date ?? new Date().toISOString().split("T")[0],
       muscle_groups_focus: muscleGroups,
       workout_type: workoutType,
     })
@@ -25,6 +26,16 @@ export async function createWorkoutSession(
 
   if (error) throw new Error(error.message);
   return data.id;
+}
+
+export async function updateWorkoutDate(sessionId: string, date: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("workout_sessions")
+    .update({ date })
+    .eq("id", sessionId);
+
+  if (error) throw new Error(error.message);
 }
 
 export async function createExerciseLog(
