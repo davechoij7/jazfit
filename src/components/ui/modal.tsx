@@ -7,9 +7,10 @@ interface ModalProps {
   onClose: () => void;
   children: ReactNode;
   title?: string;
+  footer?: ReactNode;
 }
 
-export function Modal({ isOpen, onClose, children, title }: ModalProps) {
+export function Modal({ isOpen, onClose, children, title, footer }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,9 +35,9 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
       }}
     >
       <div className="absolute inset-0 bg-[#2D1A20]/40 backdrop-blur-sm" />
-      <div className="relative w-full max-w-lg bg-bg-card rounded-t-3xl border-t border-border pb-safe animate-slide-up">
+      <div className="relative w-full max-w-lg bg-bg-card rounded-t-3xl border-t border-border animate-slide-up flex flex-col max-h-[90dvh]">
         {/* Drag handle + close button row */}
-        <div className="flex items-center justify-between pt-3 pb-2 px-4">
+        <div className="shrink-0 flex items-center justify-between pt-3 pb-2 px-4">
           <div className="w-10 h-1 rounded-full bg-text-dim mx-auto" />
           <button
             onClick={onClose}
@@ -49,9 +50,13 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
           </button>
         </div>
         {title && (
-          <h2 className="text-lg font-bold text-text-primary px-6 pb-4">{title}</h2>
+          <h2 className="shrink-0 text-lg font-bold text-text-primary px-6 pb-4">{title}</h2>
         )}
-        <div className="px-6 pb-24 overflow-y-auto max-h-[80vh]">{children}</div>
+        <div className="overflow-y-auto px-6 pb-4">{children}</div>
+        {footer && (
+          <div className="shrink-0 px-6 pt-2 pb-safe">{footer}</div>
+        )}
+        {!footer && <div className="shrink-0 pb-safe" />}
       </div>
     </div>
   );

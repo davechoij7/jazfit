@@ -258,7 +258,16 @@ export function MeasurementsContent({ measurements }: Props) {
       )}
 
       {/* Log measurement modal */}
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Log Measurements">
+      <Modal
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        title="Log Measurements"
+        footer={
+          <Button className="w-full" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        }
+      >
         <div className="space-y-4">
           {/* Date */}
           <div>
@@ -292,14 +301,6 @@ export function MeasurementsContent({ measurements }: Props) {
               </div>
             ))}
           </div>
-
-          <Button
-            className="w-full mt-2"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving ? "Saving…" : "Save"}
-          </Button>
         </div>
       </Modal>
     </div>
