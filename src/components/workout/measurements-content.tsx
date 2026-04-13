@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ResponsiveContainer,
   LineChart,
@@ -12,6 +13,9 @@ import {
   Tooltip,
 } from "recharts";
 import type { BodyMeasurement } from "@/lib/types";
+import { logMeasurement } from "@/actions/measurements";
+import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   measurements: BodyMeasurement[];
@@ -42,6 +46,16 @@ const DISPLAY_FIELDS: Array<{
   { key: "weight", label: "Weight", unit: " lbs" },
 ];
 
+const FORM_FIELDS = [
+  { key: "waist", label: "Waist", unit: '"', step: 0.25 },
+  { key: "hips", label: "Hips", unit: '"', step: 0.25 },
+  { key: "arms_left", label: "L Arm", unit: '"', step: 0.25 },
+  { key: "arms_right", label: "R Arm", unit: '"', step: 0.25 },
+  { key: "thighs_left", label: "L Thigh", unit: '"', step: 0.25 },
+  { key: "thighs_right", label: "R Thigh", unit: '"', step: 0.25 },
+  { key: "weight", label: "Weight", unit: "lbs", step: 0.5 },
+];
+
 const glassStyle: React.CSSProperties = {
   background: "rgba(240,196,206,0.55)",
   backdropFilter: "blur(20px)",
@@ -50,8 +64,17 @@ const glassStyle: React.CSSProperties = {
   boxShadow: "0 2px 12px rgba(122,51,71,0.06)",
 };
 
+const inputClass =
+  "w-full px-3 py-2.5 rounded-xl bg-white/60 border border-white/40 text-text-primary text-base focus:outline-none focus:border-accent placeholder:text-text-dim";
+
 export function MeasurementsContent({ measurements }: Props) {
+  const router = useRouter();
   const [selectedTab, setSelectedTab] = useState("Waist");
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+
+  const today = new Date().toISOString().split("T")[0];
 
   const selectedField = METRIC_FIELDS[selectedTab];
 
@@ -66,19 +89,56 @@ export function MeasurementsContent({ measurements }: Props) {
       value: m[selectedField] as number,
     }));
 
+  function openForm() {
+    setFormValues({});
+    setShowForm(true);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const date = formValues.date || today;
+      await logMeasurement({
+        date,
+        ...(formValues.weight ? { weight: parseFloat(formValues.weight) } : {}),
+        ...(formValues.waist ? { waist: parseFloat(formValues.waist) } : {}),
+        ...(formValues.hips ? { hips: parseFloat(formValues.hips) } : {}),
+        ...(formValues.arms_left ? { arms_left: parseFloat(formValues.arms_left) } : {}),
+        ...(formValues.arms_right ? { arms_right: parseFloat(formValues.arms_right) } : {}),
+        ...(formValues.thighs_left ? { thighs_left: parseFloat(formValues.thighs_left) } : {}),
+        ...(formValues.thighs_right ? { thighs_right: parseFloat(formValues.thighs_right) } : {}),
+      });
+      setShowForm(false);
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="px-4 pt-6 pb-24">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href="/profile"
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[#7A3347]"
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/profile"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[#7A3347]"
+          >
+            ←
+          </Link>
+          <h1 className="font-display text-2xl font-normal text-text-primary">
+            Measurements
+          </h1>
+        </div>
+        <button
+          type="button"
+          onClick={openForm}
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-white text-xl font-light touch-manipulation select-none"
+          style={{ background: "#C4808E" }}
+          aria-label="Log measurement"
         >
-          ←
-        </Link>
-        <h1 className="font-display text-2xl font-normal text-text-primary">
-          Measurements
-        </h1>
+          +
+        </button>
       </div>
 
       {/* Metric tab selector */}
@@ -196,6 +256,52 @@ export function MeasurementsContent({ measurements }: Props) {
           );
         })
       )}
+
+      {/* Log measurement modal */}
+      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Log Measurements">
+        <div className="space-y-4">
+          {/* Date */}
+          <div>
+            <label className="block text-xs font-medium text-text-muted mb-1.5">Date</label>
+            <input
+              type="date"
+              defaultValue={today}
+              onChange={(e) => setFormValues((v) => ({ ...v, date: e.target.value }))}
+              className={inputClass}
+            />
+          </div>
+
+          {/* Measurement fields — 2-column grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {FORM_FIELDS.map((f) => (
+              <div key={f.key}>
+                <label className="block text-xs font-medium text-text-muted mb-1.5">
+                  {f.label} <span className="text-text-dim font-normal">({f.unit})</span>
+                </label>
+                <input
+                  type="number"
+                  step={f.step}
+                  min={0}
+                  placeholder="—"
+                  value={formValues[f.key] ?? ""}
+                  onChange={(e) =>
+                    setFormValues((v) => ({ ...v, [f.key]: e.target.value }))
+                  }
+                  className={inputClass}
+                />
+              </div>
+            ))}
+          </div>
+
+          <Button
+            className="w-full mt-2"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
