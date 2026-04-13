@@ -46,6 +46,11 @@ body {
   padding-bottom: max(env(safe-area-inset-bottom), 16px);
 }
 
+/* Page-level bottom padding: clears the bottom nav (64px) + safe-area inset */
+.pb-nav {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+
 /* Prevent overscroll bounce on iOS */
 html, body {
   overscroll-behavior: none;

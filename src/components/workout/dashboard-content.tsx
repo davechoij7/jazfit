@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -46,15 +46,32 @@ export function DashboardContent({
   recentSessions,
 }: DashboardContentProps) {
   const [selectedSplit, setSelectedSplit] = useState<WorkoutSplit>(suggestedSplit);
+  const [activeSession, setActiveSession] = useState<{
+    sessionId: string;
+    split: WorkoutSplit;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("jazfit-active-workout");
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed?.status === "active" && parsed?.sessionId && parsed?.split) {
+        setActiveSession({ sessionId: parsed.sessionId, split: parsed.split });
+      }
+    } catch {}
+  }, []);
 
   const greeting = getGreeting();
-  const displayName =
-    selectedSplit === "Upper"
-      ? "Upper Body"
-      : selectedSplit === "Lower"
-      ? "Lower Body"
-      : selectedSplit;
 
+  function splitDisplayName(split: WorkoutSplit): string {
+    if (split === "Upper") return "Upper Body";
+    if (split === "Lower") return "Lower Body";
+    return split;
+  }
+
+  const displayName = splitDisplayName(selectedSplit);
+  const activeDisplayName = activeSession ? splitDisplayName(activeSession.split) : null;
   const lastTrained = getLastTrainedLabel(recentSessions, selectedSplit);
 
   if (!hasExercises) {
@@ -98,89 +115,138 @@ export function DashboardContent({
           🌸
         </span>
 
-        {/* Chip row */}
-        <div
-          className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {ALL_SPLITS.map((split) => {
-            const isActive = split === selectedSplit;
-            return (
-              <button
-                key={split}
-                type="button"
-                onClick={() => setSelectedSplit(split)}
-                className="px-3 py-1.5 rounded-full text-sm whitespace-nowrap min-h-[48px] shrink-0"
-                style={
-                  isActive
-                    ? {
-                        background: "rgba(255,255,255,0.28)",
-                        border: "1px solid rgba(255,255,255,0.5)",
-                        color: "white",
-                        fontWeight: 700,
-                      }
-                    : {
-                        background: "rgba(255,255,255,0.12)",
-                        border: "1px solid rgba(255,255,255,0.2)",
-                        color: "rgba(255,255,255,0.7)",
-                      }
-                }
+        {activeSession ? (
+          <>
+            {/* Resume mode: no chips, show in-progress split */}
+            <div className="flex justify-center py-4">
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
               >
-                {split}
-              </button>
-            );
-          })}
-        </div>
+                <div
+                  className="w-24 h-24 rounded-full flex items-center justify-center"
+                  style={{
+                    background: "rgba(255,255,255,0.18)",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                  }}
+                >
+                  <Image
+                    src={SPLIT_IMAGES[activeSession.split]}
+                    alt={activeDisplayName!}
+                    width={80}
+                    height={80}
+                    className="object-contain"
+                  />
+                </div>
+              </motion.div>
+            </div>
 
-        {/* Snoopy image with bounce animation */}
-        <div className="flex justify-center py-4">
-          <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-          >
-            <div
-              className="w-24 h-24 rounded-full flex items-center justify-center"
+            <div>
+              <p className="text-[10px] tracking-widest opacity-70 text-white uppercase mb-0.5 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block" />
+                In Progress
+              </p>
+              <p className="text-xl font-display text-white font-semibold">
+                {activeDisplayName}
+              </p>
+            </div>
+
+            <Link
+              href="/workout/active"
+              className="block w-full text-center rounded-full py-3 font-semibold text-sm mt-3"
               style={{
-                background: "rgba(255,255,255,0.18)",
-                border: "1px solid rgba(255,255,255,0.3)",
+                background: "rgba(255,255,255,0.2)",
+                border: "1px solid rgba(255,255,255,0.35)",
+                color: "white",
               }}
             >
-              <Image
-                src={SPLIT_IMAGES[selectedSplit]}
-                alt={displayName}
-                width={80}
-                height={80}
-                className="object-contain"
-              />
+              Resume Workout →
+            </Link>
+          </>
+        ) : (
+          <>
+            {/* Normal mode: chip row, suggested split, start button */}
+            <div
+              className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {ALL_SPLITS.map((split) => {
+                const isChipActive = split === selectedSplit;
+                return (
+                  <button
+                    key={split}
+                    type="button"
+                    onClick={() => setSelectedSplit(split)}
+                    className="px-3 py-1.5 rounded-full text-sm whitespace-nowrap min-h-[48px] shrink-0"
+                    style={
+                      isChipActive
+                        ? {
+                            background: "rgba(255,255,255,0.28)",
+                            border: "1px solid rgba(255,255,255,0.5)",
+                            color: "white",
+                            fontWeight: 700,
+                          }
+                        : {
+                            background: "rgba(255,255,255,0.12)",
+                            border: "1px solid rgba(255,255,255,0.2)",
+                            color: "rgba(255,255,255,0.7)",
+                          }
+                    }
+                  >
+                    {split}
+                  </button>
+                );
+              })}
             </div>
-          </motion.div>
-        </div>
 
-        {/* Title + meta */}
-        <div>
-          {selectedSplit === suggestedSplit && (
-            <p className="text-[10px] tracking-widest opacity-70 text-white uppercase mb-0.5">
-              Suggested today
-            </p>
-          )}
-          <p className="text-xl font-display text-white font-semibold">
-            {displayName}
-          </p>
-          <p className="text-sm opacity-60 text-white mt-0.5">{lastTrained}</p>
-        </div>
+            <div className="flex justify-center py-4">
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              >
+                <div
+                  className="w-24 h-24 rounded-full flex items-center justify-center"
+                  style={{
+                    background: "rgba(255,255,255,0.18)",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                  }}
+                >
+                  <Image
+                    src={SPLIT_IMAGES[selectedSplit]}
+                    alt={displayName}
+                    width={80}
+                    height={80}
+                    className="object-contain"
+                  />
+                </div>
+              </motion.div>
+            </div>
 
-        {/* Start button */}
-        <Link
-          href={`/workout/active?split=${selectedSplit}`}
-          className="block w-full text-center rounded-full py-3 font-semibold text-sm mt-3"
-          style={{
-            background: "rgba(255,255,255,0.2)",
-            border: "1px solid rgba(255,255,255,0.35)",
-            color: "white",
-          }}
-        >
-          Start Workout →
-        </Link>
+            <div>
+              {selectedSplit === suggestedSplit && (
+                <p className="text-[10px] tracking-widest opacity-70 text-white uppercase mb-0.5">
+                  Suggested today
+                </p>
+              )}
+              <p className="text-xl font-display text-white font-semibold">
+                {displayName}
+              </p>
+              <p className="text-sm opacity-60 text-white mt-0.5">{lastTrained}</p>
+            </div>
+
+            <Link
+              href={`/workout/active?split=${selectedSplit}`}
+              className="block w-full text-center rounded-full py-3 font-semibold text-sm mt-3"
+              style={{
+                background: "rgba(255,255,255,0.2)",
+                border: "1px solid rgba(255,255,255,0.35)",
+                color: "white",
+              }}
+            >
+              Start Workout →
+            </Link>
+          </>
+        )}
       </div>
 
       {/* Steps card */}

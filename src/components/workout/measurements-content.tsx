@@ -56,6 +56,24 @@ const FORM_FIELDS = [
   { key: "weight", label: "Weight", unit: "lbs", step: 0.5 },
 ];
 
+function formatDelta(delta: number): string {
+  const abs = Math.abs(delta);
+  return abs.toFixed(2).replace(/\.?0+$/, "") || "0";
+}
+
+function DeltaChip({ delta, label }: { delta: number; label: "prev" | "first" }) {
+  if (Math.abs(delta) < 0.005) return null;
+  const isNeg = delta < 0;
+  return (
+    <span
+      className="text-[10px] font-medium whitespace-nowrap"
+      style={{ color: isNeg ? "#7EBF8E" : "#C75B5B" }}
+    >
+      {isNeg ? "▼" : "▲"} {isNeg ? "" : "+"}{formatDelta(delta)} {label}
+    </span>
+  );
+}
+
 const glassStyle: React.CSSProperties = {
   background: "rgba(240,196,206,0.55)",
   backdropFilter: "blur(20px)",
@@ -222,11 +240,15 @@ export function MeasurementsContent({ measurements }: Props) {
           No measurements logged yet
         </p>
       ) : (
-        measurements.map((m) => {
+        measurements.map((m, index) => {
           const nonNullFields = DISPLAY_FIELDS.filter(
             (f) => m[f.key] != null
           );
           if (nonNullFields.length === 0) return null;
+
+          const prevEntry = index < measurements.length - 1 ? measurements[index + 1] : null;
+          const firstEntry = measurements[measurements.length - 1];
+          const isOldest = index === measurements.length - 1;
 
           return (
             <div
@@ -241,16 +263,29 @@ export function MeasurementsContent({ measurements }: Props) {
                   year: "numeric",
                 })}
               </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                {nonNullFields.map((f) => (
-                  <div key={String(f.key)} className="flex justify-between">
-                    <span className="text-xs text-[#7A6068]">{f.label}</span>
-                    <span className="text-xs font-medium text-text-primary">
-                      {m[f.key]}
-                      {f.unit}
-                    </span>
-                  </div>
-                ))}
+              <div className="space-y-1.5">
+                {nonNullFields.map((f) => {
+                  const val = m[f.key] as number;
+                  const prevVal = prevEntry?.[f.key] != null ? prevEntry[f.key] as number : null;
+                  const firstVal = !isOldest && firstEntry[f.key] != null ? firstEntry[f.key] as number : null;
+
+                  return (
+                    <div key={String(f.key)} className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-[#7A6068] shrink-0">{f.label}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-text-primary">
+                          {val}{f.unit}
+                        </span>
+                        {prevVal != null && (
+                          <DeltaChip delta={val - prevVal} label="prev" />
+                        )}
+                        {firstVal != null && (
+                          <DeltaChip delta={val - firstVal} label="first" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

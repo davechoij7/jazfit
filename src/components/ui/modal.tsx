@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   isOpen: boolean;
@@ -12,6 +13,11 @@ interface ModalProps {
 
 export function Modal({ isOpen, onClose, children, title, footer }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -24,9 +30,9 @@ export function Modal({ isOpen, onClose, children, title, footer }: ModalProps) 
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       className="fixed inset-0 z-[60] flex items-end justify-center"
@@ -58,6 +64,7 @@ export function Modal({ isOpen, onClose, children, title, footer }: ModalProps) 
         )}
         {!footer && <div className="shrink-0 pb-safe" />}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
