@@ -35,8 +35,18 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
     >
       <div className="absolute inset-0 bg-[#2D1A20]/40 backdrop-blur-sm" />
       <div className="relative w-full max-w-lg bg-bg-card rounded-t-3xl border-t border-border pb-safe animate-slide-up">
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 rounded-full bg-text-dim" />
+        {/* Drag handle + close button row */}
+        <div className="flex items-center justify-between pt-3 pb-2 px-4">
+          <div className="w-10 h-1 rounded-full bg-text-dim mx-auto" />
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-3 min-h-[44px] min-w-[44px] flex items-center justify-center text-text-dim active:text-text-primary"
+            aria-label="Close"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
         {title && (
           <h2 className="text-lg font-bold text-text-primary px-6 pb-4">{title}</h2>

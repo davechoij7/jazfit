@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WorkoutSummary } from "@/components/workout/workout-summary";
 import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
+import { BackButton } from "@/components/ui/back-button";
 import { MUSCLE_GROUP_COLORS, EQUIPMENT_LABELS, WORKOUT_TYPE_COLORS } from "@/lib/constants";
 import type { MuscleGroup, EquipmentType, WorkoutSplit } from "@/lib/types";
 
@@ -58,20 +59,23 @@ export default async function SessionDetailPage({ params }: Props) {
     <div className="px-4 pt-6 pb-4 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-text-muted">{dateStr}</p>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {session.workout_type && session.muscle_groups_focus.length === 0 ? (
-              <Badge colorClass={WORKOUT_TYPE_COLORS[session.workout_type as WorkoutSplit]}>
-                {session.workout_type}
-              </Badge>
-            ) : (
-              session.muscle_groups_focus.map((g: string) => (
-                <Badge key={g} colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}>
-                  {g}
+        <div className="flex items-start gap-1">
+          <BackButton />
+          <div>
+            <p className="text-sm text-text-muted">{dateStr}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {session.workout_type && session.muscle_groups_focus.length === 0 ? (
+                <Badge colorClass={WORKOUT_TYPE_COLORS[session.workout_type as WorkoutSplit]}>
+                  {session.workout_type}
                 </Badge>
-              ))
-            )}
+              ) : (
+                session.muscle_groups_focus.map((g: string) => (
+                  <Badge key={g} colorClass={MUSCLE_GROUP_COLORS[g as MuscleGroup]}>
+                    {g}
+                  </Badge>
+                ))
+              )}
+            </div>
           </div>
         </div>
         <DeleteWorkoutButton sessionId={sessionId} />
