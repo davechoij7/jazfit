@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { suggestSplit } from "@/lib/workout-engine";
 import { DashboardContent } from "@/components/workout/dashboard-content";
 import type { DailyStep } from "@/actions/health";
+import { getUnseenSticker } from "@/actions/stickers";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -18,7 +19,7 @@ export default async function DashboardPage() {
 
   // Run independent fetches in parallel — all use the SAME supabase client
   // to avoid token refresh race conditions with separate clients
-  const [{ count }, { data: recentSessions }, { data: stepsData }] = await Promise.all([
+  const [{ count }, { data: recentSessions }, { data: stepsData }, unseenSticker] = await Promise.all([
     supabase
       .from("user_exercises")
       .select("*", { count: "exact", head: true })
@@ -38,6 +39,7 @@ export default async function DashboardPage() {
       .gte("date", stepsStart)
       .lte("date", stepsEnd)
       .order("date", { ascending: true }),
+    getUnseenSticker(),
   ]);
 
   const weeklySteps: DailyStep[] = (stepsData ?? []) as DailyStep[];
@@ -51,6 +53,7 @@ export default async function DashboardPage() {
       suggestedSplit={suggestedSplit}
       weeklySteps={weeklySteps}
       recentSessions={recentSessions ?? []}
+      unseenSticker={unseenSticker}
     />
   );
 }

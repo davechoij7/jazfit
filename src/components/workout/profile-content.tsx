@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { BodyMeasurement } from "@/lib/types";
+import type { BodyMeasurement, DailySticker } from "@/lib/types";
 import type { WorkoutStats } from "@/actions/workout";
 import { ProfileStatsCard } from "@/components/workout/profile-stats-card";
 import { MeasurementPromptBanner } from "@/components/workout/measurement-prompt-banner";
 import { BodyMeasurementsCard } from "@/components/workout/body-measurements-card";
 import { MeasurementForm } from "@/components/workout/measurement-form";
+import { StickerCalendar } from "@/components/workout/sticker-calendar";
 
 interface Props {
   profile: { name: string | null; created_at: string } | null;
@@ -14,6 +15,7 @@ interface Props {
   stats: WorkoutStats;
   measurementOverdue: boolean;
   memberSince: string | null;
+  stickerHistory: DailySticker[];
 }
 
 export function ProfileContent({
@@ -22,6 +24,7 @@ export function ProfileContent({
   stats,
   measurementOverdue,
   memberSince,
+  stickerHistory,
 }: Props) {
   const [showForm, setShowForm] = useState(false);
 
@@ -67,6 +70,14 @@ export function ProfileContent({
           Body measurements
         </h2>
         <BodyMeasurementsCard measurements={measurements} />
+      </section>
+
+      {/* Sticker history */}
+      <section className="mt-5">
+        <h2 className="text-sm font-medium text-text-muted mb-3 tracking-wide">
+          Daily stickers
+        </h2>
+        <StickerCalendar stickers={stickerHistory} />
       </section>
 
       {/* Measurement form modal */}

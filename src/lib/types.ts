@@ -163,3 +163,19 @@ export interface MuscleGroupStat {
   lastTrainedDate: string | null;
   daysSinceLast: number; // Infinity if never trained
 }
+
+// --- Sticker reward types ---
+
+export type StickerSize = "big" | "medium" | "small" | "none";
+
+export interface DailySticker {
+  id: string;
+  user_id: string;
+  date: string; // YYYY-MM-DD
+  sticker_size: StickerSize;
+  had_workout: boolean;
+  had_10k_steps: boolean;
+  step_count: number | null;
+  seen_at: string | null;
+  created_at: string;
+}

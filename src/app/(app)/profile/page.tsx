@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBodyMeasurements } from "@/actions/measurements";
 import { getWorkoutStats } from "@/actions/workout";
+import { getStickerHistory } from "@/actions/stickers";
 import { ProfileContent } from "@/components/workout/profile-content";
 import type { Profile } from "@/lib/types";
 
@@ -10,7 +11,7 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: profileData }, measurements, stats] = await Promise.all([
+  const [{ data: profileData }, measurements, stats, stickerHistory] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, created_at, name, preferences")
@@ -18,6 +19,7 @@ export default async function ProfilePage() {
       .single(),
     getBodyMeasurements(),
     getWorkoutStats(),
+    getStickerHistory(90),
   ]);
 
   const profile = profileData as Profile | null;
@@ -44,6 +46,7 @@ export default async function ProfilePage() {
       stats={stats}
       measurementOverdue={measurementOverdue}
       memberSince={memberSince}
+      stickerHistory={stickerHistory}
     />
   );
 }

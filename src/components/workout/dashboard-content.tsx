@@ -9,12 +9,15 @@ import type { WorkoutSplit } from "@/lib/types";
 import type { DailyStep } from "@/actions/health";
 import { StepsCard } from "@/components/workout/steps-card";
 import { WorkoutHistoryRow } from "@/components/workout/workout-history-row";
+import { StickerAnimation } from "@/components/workout/sticker-animation";
+import type { DailySticker } from "@/lib/types";
 
 interface DashboardContentProps {
   hasExercises: boolean;
   suggestedSplit: WorkoutSplit;
   weeklySteps: DailyStep[];
   recentSessions: { id: string; date: string; workout_type: string | null }[];
+  unseenSticker: DailySticker | null;
 }
 
 
@@ -44,6 +47,7 @@ export function DashboardContent({
   suggestedSplit,
   weeklySteps,
   recentSessions,
+  unseenSticker,
 }: DashboardContentProps) {
   const [selectedSplit, setSelectedSplit] = useState<WorkoutSplit>(suggestedSplit);
   const [activeSession, setActiveSession] = useState<{
@@ -54,12 +58,14 @@ export function DashboardContent({
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem("jazfit-active-workout");
+      console.log("[dashboard] sessionStorage raw:", raw ? `${raw.slice(0, 120)}…` : "null");
       if (!raw) return;
       const parsed = JSON.parse(raw);
+      console.log("[dashboard] parsed:", { status: parsed?.status, sessionId: parsed?.sessionId, split: parsed?.split });
       if (parsed?.status === "active" && parsed?.sessionId && parsed?.split) {
         setActiveSession({ sessionId: parsed.sessionId, split: parsed.split });
       }
-    } catch {}
+    } catch (e) { console.error("[dashboard] sessionStorage error:", e); }
   }, []);
 
   const greeting = getGreeting();
@@ -93,6 +99,15 @@ export function DashboardContent({
 
   return (
     <div className="px-4 pt-6 space-y-4 pb-8">
+      {/* Morning sticker animation */}
+      {unseenSticker && unseenSticker.sticker_size !== "none" && (
+        <StickerAnimation
+          stickerId={unseenSticker.id}
+          stickerSize={unseenSticker.sticker_size as Exclude<typeof unseenSticker.sticker_size, "none">}
+          date={unseenSticker.date}
+        />
+      )}
+
       {/* Greeting */}
       <div>
         <h1 className="text-2xl font-display text-text-primary">
