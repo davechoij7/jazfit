@@ -14,7 +14,7 @@ interface DashboardContentProps {
   hasExercises: boolean;
   suggestedSplit: WorkoutSplit;
   weeklySteps: DailyStep[];
-  recentSessions: { date: string; workout_type: string | null }[];
+  recentSessions: { id: string; date: string; workout_type: string | null }[];
 }
 
 
