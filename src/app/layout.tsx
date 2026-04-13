@@ -53,6 +53,7 @@ export default function RootLayout({
           aria-hidden="true"
           className="fixed inset-0"
           style={{
+            zIndex: -1,
             backgroundImage:
               "linear-gradient(rgba(251,240,240,0.45),rgba(251,240,240,0.45)),url('/background.jpg')",
             backgroundSize: "cover",

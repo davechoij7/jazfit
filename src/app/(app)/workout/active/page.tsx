@@ -207,9 +207,17 @@ function ActiveWorkoutContent() {
     : (SPLIT_GROUPS[workout.state.split as StrengthSplit] ?? []) as MuscleGroup[];
 
   return (
-    <div className="flex flex-col min-h-dvh pb-20 bg-bg-primary">
+    <div className="flex flex-col min-h-dvh pb-20">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <header
+        className="flex items-center justify-between px-4 py-3"
+        style={{
+          background: "rgba(240, 196, 206, 0.55)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.25)",
+        }}
+      >
         <button
           type="button"
           onClick={() => {
@@ -237,7 +245,7 @@ function ActiveWorkoutContent() {
 
       {/* Exercise tabs - scrollable pills */}
       {workout.hasExercises && (
-        <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-none">
+        <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-none" style={{ background: "rgba(251, 240, 240, 0.6)" }}>
           {workout.state.exercises.map((ex, i) => {
             const allComplete = ex.sets.every((s) => s.isCompleted);
             const isCurrent = i === workout.state.currentExerciseIndex;
@@ -272,7 +280,7 @@ function ActiveWorkoutContent() {
       )}
 
       {/* Main content */}
-      <div className="flex-1 px-4 pb-24 overflow-y-auto">
+      <div className="flex-1 px-4 pb-24 overflow-y-auto" style={{ background: "rgba(251, 240, 240, 0.75)" }}>
         {!workout.hasExercises && isNonStrength ? (
           /* Non-strength session: timer + notes */
           <div className="flex flex-col items-center gap-8 py-12">

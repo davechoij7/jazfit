@@ -13,7 +13,7 @@ export function WorkoutSummary({ duration, totalSets, totalVolume }: WorkoutSumm
   };
 
   return (
-    <Card padding="md">
+    <Card padding="md" glass>
       <div className="grid grid-cols-3 gap-3 text-center">
         <div>
           <p className="text-xl font-bold text-text-primary">

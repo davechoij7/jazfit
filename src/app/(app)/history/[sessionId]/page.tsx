@@ -79,7 +79,7 @@ export default async function SessionDetailPage({ params }: Props) {
 
       {/* Summary stats */}
       {session.workout_type && session.muscle_groups_focus.length === 0 ? (
-        <Card padding="md">
+        <Card padding="md" glass>
           <div className="text-center">
             <p className="text-xl font-bold text-text-primary">
               {session.duration_seconds
@@ -99,7 +99,7 @@ export default async function SessionDetailPage({ params }: Props) {
 
       {/* Notes */}
       {session.notes && (
-        <Card padding="sm">
+        <Card padding="sm" glass>
           <p className="text-sm text-text-muted italic">{session.notes}</p>
         </Card>
       )}
@@ -116,7 +116,7 @@ export default async function SessionDetailPage({ params }: Props) {
           const sets = (log.set_logs ?? []).sort((a: any, b: any) => a.set_number - b.set_number);
 
           return (
-            <Card key={log.id} padding="md">
+            <Card key={log.id} padding="md" glass>
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3 className="font-medium text-text-primary">{exercise.name}</h3>
