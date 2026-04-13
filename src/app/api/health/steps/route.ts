@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     const all: Record<string, string> = {};
     form.forEach((v, k) => { all[k] = String(v); });
-    const date = String(form.get("date") ?? "").trim();
-    const rawSteps = String(form.get("steps") ?? "").replace(/,/g, "").trim();
+    const date = String(form.get("date") ?? form.get("Date") ?? "").trim();
+    const rawSteps = String(form.get("steps") ?? form.get("Steps") ?? "").replace(/,/g, "").trim();
     const steps = Math.round(parseFloat(rawSteps));
     if (!date || isNaN(steps)) {
       return NextResponse.json(
