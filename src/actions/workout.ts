@@ -43,6 +43,19 @@ export async function updateWorkoutDate(sessionId: string, date: string) {
   revalidatePath("/dashboard");
 }
 
+export async function updateWorkoutDuration(sessionId: string, durationSeconds: number) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("workout_sessions")
+    .update({ duration_seconds: durationSeconds })
+    .eq("id", sessionId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/history/${sessionId}`);
+  revalidatePath("/history");
+}
+
 export async function createExerciseLog(
   sessionId: string,
   exerciseId: string,

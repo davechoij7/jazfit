@@ -1,24 +1,25 @@
 import { Card } from "@/components/ui/card";
+import { EditableDurationField } from "@/components/workout/editable-duration-field";
 
 interface WorkoutSummaryProps {
+  sessionId?: string;
   duration: number | null; // seconds
   totalSets: number;
   totalVolume: number; // lbs
 }
 
-export function WorkoutSummary({ duration, totalSets, totalVolume }: WorkoutSummaryProps) {
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    return `${mins} min`;
-  };
-
+export function WorkoutSummary({ sessionId, duration, totalSets, totalVolume }: WorkoutSummaryProps) {
   return (
     <Card padding="md" glass>
       <div className="grid grid-cols-3 gap-3 text-center">
         <div>
-          <p className="text-xl font-bold text-text-primary">
-            {duration ? formatDuration(duration) : "--"}
-          </p>
+          {sessionId ? (
+            <EditableDurationField sessionId={sessionId} durationSeconds={duration} />
+          ) : (
+            <p className="text-xl font-bold text-text-primary">
+              {duration ? `${Math.floor(duration / 60)} min` : "--"}
+            </p>
+          )}
           <p className="text-xs text-text-dim">Duration</p>
         </div>
         <div>

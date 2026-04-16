@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { WorkoutSummary } from "@/components/workout/workout-summary";
 import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
 import { EditableDateField } from "@/components/workout/editable-date-field";
+import { EditableDurationField } from "@/components/workout/editable-duration-field";
 import { BackButton } from "@/components/ui/back-button";
 import { MUSCLE_GROUP_COLORS, EQUIPMENT_LABELS, WORKOUT_TYPE_COLORS } from "@/lib/constants";
 import type { MuscleGroup, EquipmentType, WorkoutSplit } from "@/lib/types";
@@ -79,16 +80,13 @@ export default async function SessionDetailPage({ params }: Props) {
       {session.workout_type && session.muscle_groups_focus.length === 0 ? (
         <Card padding="md" glass>
           <div className="text-center">
-            <p className="text-xl font-bold text-text-primary">
-              {session.duration_seconds
-                ? `${Math.round(session.duration_seconds / 60)} min`
-                : "--"}
-            </p>
+            <EditableDurationField sessionId={sessionId} durationSeconds={session.duration_seconds} />
             <p className="text-xs text-text-dim">Duration</p>
           </div>
         </Card>
       ) : (
         <WorkoutSummary
+          sessionId={sessionId}
           duration={session.duration_seconds}
           totalSets={totalSets}
           totalVolume={totalVolume}
