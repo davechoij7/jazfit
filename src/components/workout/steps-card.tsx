@@ -130,6 +130,7 @@ export function StepsCard({ data, goal = 10_000 }: StepsCardProps) {
             {weekDays.map((date) => {
               const steps = stepsByDate.get(date) ?? 0;
               const heightPct = steps > 0 ? Math.max(4, (steps / maxSteps) * 100) : 4;
+              const barPx = Math.round((heightPct / 100) * 80); // h-20 = 80px
               const isToday = date === todayDate;
               const met = steps >= goal;
 
@@ -141,7 +142,7 @@ export function StepsCard({ data, goal = 10_000 }: StepsCardProps) {
                   <div
                     className="w-full rounded-t-sm"
                     style={{
-                      height: `${heightPct}%`,
+                      height: `${barPx}px`,
                       // Rose/dusty when goal met, muted blush when not, very faint if zero
                       background:
                         steps === 0
