@@ -19,13 +19,12 @@ export async function getLast7DaysSteps(): Promise<DailyStep[]> {
 
   if (!user) return [];
 
-  // Calculate date range (today and the 6 days before)
-  const today = new Date();
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 6);
-
-  const startDate = sevenDaysAgo.toISOString().split("T")[0];
-  const endDate = today.toISOString().split("T")[0];
+  // Calculate date range in US Eastern (matches iPhone-reported dates)
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" });
+  const endDate = fmt.format(new Date());
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  const startDate = fmt.format(sevenDaysAgo);
 
   const { data, error } = await supabase
     .from("daily_steps")

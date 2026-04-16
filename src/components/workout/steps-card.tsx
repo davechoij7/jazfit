@@ -9,6 +9,14 @@ interface StepsCardProps {
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+/** Format a Date as YYYY-MM-DD in local timezone (not UTC). */
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 /** Returns an array of the 7 days in the current week ending today (Sun→Sat order). */
 function buildWeekDays(): string[] {
   const days: string[] = [];
@@ -16,7 +24,7 @@ function buildWeekDays(): string[] {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    days.push(d.toISOString().split("T")[0]);
+    days.push(localDateStr(d));
   }
   return days;
 }

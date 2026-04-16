@@ -10,12 +10,12 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 7-day date range for steps query
-  const today = new Date();
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 6);
-  const stepsStart = sevenDaysAgo.toISOString().split("T")[0];
-  const stepsEnd = today.toISOString().split("T")[0];
+  // 7-day date range for steps query (use US Eastern so dates match the iPhone)
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }); // en-CA gives YYYY-MM-DD
+  const stepsEnd = fmt.format(new Date());
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  const stepsStart = fmt.format(sevenDaysAgo);
 
   // Run independent fetches in parallel — all use the SAME supabase client
   // to avoid token refresh race conditions with separate clients
@@ -39,10 +39,7 @@ export default async function DashboardPage() {
       .gte("date", stepsStart)
       .lte("date", stepsEnd)
       .order("date", { ascending: true })
-      .then((res) => {
-        console.log(`STEPS:rows=${res.data?.length??0},err=${res.error?.message??'none'},code=${res.error?.code??'-'}`);
-        return res;
-      }),
+      ,
     getUnseenSticker(),
   ]);
 
