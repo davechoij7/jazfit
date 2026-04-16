@@ -40,8 +40,7 @@ export default async function DashboardPage() {
       .lte("date", stepsEnd)
       .order("date", { ascending: true })
       .then((res) => {
-        if (res.error) console.error("[dashboard] daily_steps error:", res.error);
-        console.log("[dashboard] daily_steps query:", { userId: user!.id, stepsStart, stepsEnd, rowCount: res.data?.length ?? 0 });
+        console.log(`STEPS:rows=${res.data?.length??0},err=${res.error?.message??'none'},code=${res.error?.code??'-'}`);
         return res;
       }),
     getUnseenSticker(),
