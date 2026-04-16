@@ -38,7 +38,12 @@ export default async function DashboardPage() {
       .eq("user_id", user!.id)
       .gte("date", stepsStart)
       .lte("date", stepsEnd)
-      .order("date", { ascending: true }),
+      .order("date", { ascending: true })
+      .then((res) => {
+        if (res.error) console.error("[dashboard] daily_steps error:", res.error);
+        console.log("[dashboard] daily_steps query:", { userId: user!.id, stepsStart, stepsEnd, rowCount: res.data?.length ?? 0 });
+        return res;
+      }),
     getUnseenSticker(),
   ]);
 
