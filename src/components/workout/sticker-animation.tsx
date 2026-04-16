@@ -8,7 +8,7 @@
  * (overlay, dismiss logic, mark-as-seen) stays the same.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { markStickerSeen } from "@/actions/stickers";
 import type { StickerSize } from "@/lib/types";
@@ -69,11 +69,19 @@ function randomBetween(min: number, max: number) {
 export function StickerAnimation({ stickerId, stickerSize, date }: Props) {
   const [visible, setVisible] = useState(true);
   const config = STICKER_CONFIG[stickerSize];
+  const markedRef = useRef(false);
 
-  const handleDismiss = useCallback(async () => {
-    setVisible(false);
-    await markStickerSeen(stickerId);
+  // Mark as seen immediately on mount so refreshes don't re-trigger
+  useEffect(() => {
+    if (!markedRef.current) {
+      markedRef.current = true;
+      markStickerSeen(stickerId);
+    }
   }, [stickerId]);
+
+  const handleDismiss = useCallback(() => {
+    setVisible(false);
+  }, []);
 
   // Generate stable particles on first render
   const [particles] = useState(() =>

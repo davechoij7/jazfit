@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WorkoutSummary } from "@/components/workout/workout-summary";
 import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
+import { EditableDateField } from "@/components/workout/editable-date-field";
 import { BackButton } from "@/components/ui/back-button";
 import { MUSCLE_GROUP_COLORS, EQUIPMENT_LABELS, WORKOUT_TYPE_COLORS } from "@/lib/constants";
 import type { MuscleGroup, EquipmentType, WorkoutSplit } from "@/lib/types";
@@ -48,13 +49,6 @@ export default async function SessionDetailPage({ params }: Props) {
     }
   }
 
-  const dateStr = new Date(session.date + "T00:00:00").toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-
   return (
     <div className="px-4 pt-6 pb-4 space-y-6">
       {/* Header */}
@@ -62,7 +56,7 @@ export default async function SessionDetailPage({ params }: Props) {
         <div className="flex items-start gap-1">
           <BackButton />
           <div>
-            <p className="text-sm text-text-muted">{dateStr}</p>
+            <EditableDateField sessionId={sessionId} date={session.date} />
             <div className="flex flex-wrap gap-2 mt-2">
               {session.workout_type && session.muscle_groups_focus.length === 0 ? (
                 <Badge colorClass={WORKOUT_TYPE_COLORS[session.workout_type as WorkoutSplit]}>

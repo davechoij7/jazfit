@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { computeStreak } from "@/lib/workout-engine";
 import type { MuscleGroup, WorkoutSplit } from "@/lib/types";
@@ -36,6 +37,10 @@ export async function updateWorkoutDate(sessionId: string, date: string) {
     .eq("id", sessionId);
 
   if (error) throw new Error(error.message);
+
+  revalidatePath(`/history/${sessionId}`);
+  revalidatePath("/history");
+  revalidatePath("/dashboard");
 }
 
 export async function createExerciseLog(
