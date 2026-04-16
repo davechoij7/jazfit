@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateWorkoutDate } from "@/actions/workout";
 
@@ -10,7 +10,6 @@ interface EditableDateFieldProps {
 }
 
 export function EditableDateField({ sessionId, date }: EditableDateFieldProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -20,10 +19,6 @@ export function EditableDateField({ sessionId, date }: EditableDateFieldProps) {
     day: "numeric",
     year: "numeric",
   });
-
-  function openPicker() {
-    inputRef.current?.showPicker();
-  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const newDate = e.target.value;
@@ -36,11 +31,8 @@ export function EditableDateField({ sessionId, date }: EditableDateFieldProps) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={openPicker}
-      disabled={isPending}
-      className="group flex items-center gap-1.5 text-sm text-text-muted active:text-accent transition-colors touch-manipulation text-left"
+    <div
+      className="group relative flex items-center gap-1.5 text-sm text-text-muted active:text-accent transition-colors touch-manipulation text-left"
     >
       <span className={isPending ? "opacity-50" : ""}>
         {displayDate}
@@ -59,14 +51,12 @@ export function EditableDateField({ sessionId, date }: EditableDateFieldProps) {
         />
       </svg>
       <input
-        ref={inputRef}
         type="date"
         value={date}
         onChange={handleChange}
-        className="sr-only"
-        tabIndex={-1}
+        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
         aria-label="Change workout date"
       />
-    </button>
+    </div>
   );
 }

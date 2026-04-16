@@ -31,29 +31,41 @@ export async function createWorkoutSession(
 
 export async function updateWorkoutDate(sessionId: string, date: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Invalid date format");
+
   const { error } = await supabase
     .from("workout_sessions")
     .update({ date })
-    .eq("id", sessionId);
+    .eq("id", sessionId)
+    .eq("user_id", user.id);
 
   if (error) throw new Error(error.message);
 
-  revalidatePath(`/history/${sessionId}`);
-  revalidatePath("/history");
+  revalidatePath("/history", "layout");
   revalidatePath("/dashboard");
 }
 
 export async function updateWorkoutDuration(sessionId: string, durationSeconds: number) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
+    throw new Error("Invalid duration");
+  }
+
   const { error } = await supabase
     .from("workout_sessions")
     .update({ duration_seconds: durationSeconds })
-    .eq("id", sessionId);
+    .eq("id", sessionId)
+    .eq("user_id", user.id);
 
   if (error) throw new Error(error.message);
 
-  revalidatePath(`/history/${sessionId}`);
-  revalidatePath("/history");
+  revalidatePath("/history", "layout");
 }
 
 export async function createExerciseLog(

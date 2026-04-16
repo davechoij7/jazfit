@@ -22,6 +22,8 @@ export function EditableDurationField({ sessionId, durationSeconds }: EditableDu
     : "--";
 
   function handleSave() {
+    if (isPending) return;
+
     const mins = parseInt(minutes, 10);
     if (isNaN(mins) || mins < 0) {
       setEditing(false);
