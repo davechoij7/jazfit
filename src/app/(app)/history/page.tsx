@@ -17,13 +17,12 @@ export default async function HistoryPage() {
       .select("id, date, muscle_groups_focus, workout_type, duration_seconds, notes, completed_at")
       .eq("user_id", user!.id)
       .not("completed_at", "is", null)
-      .order("date", { ascending: false })
-      .limit(30),
+      .order("date", { ascending: false }),
     getChartsData(),
   ]);
 
   // Group sessions by week
-  const grouped = groupByWeek(sessions ?? [] as SessionRow[]);
+  const grouped = groupByPeriod(sessions ?? [] as SessionRow[]);
 
   return (
     <div className="px-4 pt-6 pb-4">
@@ -130,7 +129,7 @@ type SessionRow = {
   completed_at: string | null;
 };
 
-function groupByWeek(sessions: SessionRow[]) {
+function groupByPeriod(sessions: SessionRow[]) {
   const groups: { label: string; sessions: SessionRow[] }[] = [];
   const now = new Date();
   const startOfWeek = new Date(now);
@@ -142,7 +141,7 @@ function groupByWeek(sessions: SessionRow[]) {
 
   const thisWeek: SessionRow[] = [];
   const lastWeekArr: SessionRow[] = [];
-  const older: SessionRow[] = [];
+  const monthBuckets = new Map<string, SessionRow[]>();
 
   for (const session of sessions) {
     const date = new Date(session.date + "T00:00:00");
@@ -151,13 +150,17 @@ function groupByWeek(sessions: SessionRow[]) {
     } else if (date >= lastWeek) {
       lastWeekArr.push(session);
     } else {
-      older.push(session);
+      const label = date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      if (!monthBuckets.has(label)) monthBuckets.set(label, []);
+      monthBuckets.get(label)!.push(session);
     }
   }
 
   if (thisWeek.length > 0) groups.push({ label: "This Week", sessions: thisWeek });
   if (lastWeekArr.length > 0) groups.push({ label: "Last Week", sessions: lastWeekArr });
-  if (older.length > 0) groups.push({ label: "Earlier", sessions: older });
+  for (const [label, bucket] of monthBuckets) {
+    groups.push({ label, sessions: bucket });
+  }
 
   return groups;
 }
