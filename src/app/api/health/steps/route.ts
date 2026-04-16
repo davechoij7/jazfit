@@ -21,6 +21,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { computeStickerSize, STEPS_GOAL, STRENGTH_TYPES } from "@/lib/sticker-utils";
 
 function createServiceClient() {
@@ -49,15 +50,16 @@ async function evaluateSticker(
   date: string,
   stepCount: number
 ) {
-  // Check for a completed strength workout on this date (using created_at date, not completed_at)
+  // Check for a completed strength workout on this date (using completed_at as the actual workout date)
+  // NULL workout_type = legacy strength sessions (before type was added)
   const { data: workouts } = await supabase
     .from("workout_sessions")
     .select("id, workout_type")
     .eq("user_id", userId)
     .not("completed_at", "is", null)
-    .gte("created_at", `${date}T00:00:00`)
-    .lt("created_at", `${date}T23:59:59.999`)
-    .in("workout_type", STRENGTH_TYPES);
+    .gte("completed_at", `${date}T00:00:00`)
+    .lt("completed_at", `${date}T23:59:59.999`)
+    .or("workout_type.in.(Upper,Lower),workout_type.is.null");
 
   const hadWorkout = (workouts?.length ?? 0) > 0;
   const stickerSize = computeStickerSize(hadWorkout, stepCount);
@@ -115,15 +117,16 @@ async function backfillStickers(
     .gte("date", startDate)
     .lte("date", today);
 
-  // Get strength workouts for uncovered dates
+  // Get strength workouts for uncovered dates (use completed_at as actual workout date)
+  // NULL workout_type = legacy strength sessions (before type was added)
   const { data: workoutRows } = await supabase
     .from("workout_sessions")
-    .select("created_at, workout_type")
+    .select("completed_at, workout_type")
     .eq("user_id", userId)
     .not("completed_at", "is", null)
-    .gte("created_at", `${startDate}T00:00:00`)
-    .lte("created_at", `${today}T23:59:59.999`)
-    .in("workout_type", STRENGTH_TYPES);
+    .gte("completed_at", `${startDate}T00:00:00`)
+    .lte("completed_at", `${today}T23:59:59.999`)
+    .or("workout_type.in.(Upper,Lower),workout_type.is.null");
 
   // Build a map of date → { steps, hadWorkout }
   const dateMap = new Map<string, { steps: number; hadWorkout: boolean }>();
@@ -136,13 +139,13 @@ async function backfillStickers(
   }
 
   for (const row of workoutRows ?? []) {
-    const d = (row.created_at as string).split("T")[0];
+    const d = (row.completed_at as string).split("T")[0];
     if (coveredDates.has(d)) continue;
     if (!dateMap.has(d)) dateMap.set(d, { steps: 0, hadWorkout: false });
     dateMap.get(d)!.hadWorkout = true;
   }
 
-  // Evaluate uncovered dates that have any data
+  // Evaluate uncovered dates that have any data (mark as seen — these are historical backfills)
   for (const [date, info] of dateMap) {
     const stickerSize = computeStickerSize(info.hadWorkout, info.steps);
     await supabase.from("daily_stickers").upsert(
@@ -153,6 +156,7 @@ async function backfillStickers(
         had_workout: info.hadWorkout,
         had_10k_steps: info.steps >= STEPS_GOAL,
         step_count: info.steps,
+        seen_at: new Date().toISOString(),
       },
       { onConflict: "user_id,date" }
     );
@@ -223,16 +227,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // --- Sticker evaluation ---
-  // Evaluate stickers for each date in this payload
-  const syncedDates: string[] = [];
-  for (const row of rows) {
-    await evaluateSticker(supabase, userId, row.date, row.step_count);
-    syncedDates.push(row.date);
-  }
-
-  // Backfill any recent dates that were missed (phone died, shortcut skipped, etc.)
-  await backfillStickers(supabase, userId, syncedDates);
+  // --- Sticker evaluation (run in background so Shortcuts gets a fast response) ---
+  // Vercel keeps the function alive for `after()` work even after the response is sent.
+  after(async () => {
+    try {
+      const syncedDates: string[] = [];
+      for (const row of rows) {
+        await evaluateSticker(supabase, userId, row.date, row.step_count);
+        syncedDates.push(row.date);
+      }
+      // Backfill any recent dates that were missed (phone died, shortcut skipped, etc.)
+      await backfillStickers(supabase, userId, syncedDates);
+    } catch (err) {
+      console.error("[health/steps] background sticker work failed:", err);
+    }
+  });
 
   return NextResponse.json({ ok: true, synced: rows.length });
 }
