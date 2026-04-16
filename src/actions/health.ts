@@ -20,7 +20,7 @@ export async function getLast7DaysSteps(): Promise<DailyStep[]> {
   if (!user) return [];
 
   // Calculate date range in US Eastern (matches iPhone-reported dates)
-  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" });
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" });
   const endDate = fmt.format(new Date());
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);

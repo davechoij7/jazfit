@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   // 7-day date range for steps query (use US Eastern so dates match the iPhone)
-  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }); // en-CA gives YYYY-MM-DD
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }); // en-CA gives YYYY-MM-DD
   const stepsEnd = fmt.format(new Date());
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);

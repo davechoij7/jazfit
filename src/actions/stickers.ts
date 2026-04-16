@@ -15,7 +15,7 @@ export async function getUnseenSticker(): Promise<DailySticker | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
 
   const { data } = await supabase
     .from("daily_stickers")
