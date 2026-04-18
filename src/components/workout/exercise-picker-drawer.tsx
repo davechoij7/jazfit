@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { getUserExercisesForGroups, createCustomExercise } from "@/actions/exercises";
+import { getAllUserExercises, createCustomExercise } from "@/actions/exercises";
 import {
   MUSCLE_GROUP_COLORS,
   EQUIPMENT_LABELS,
@@ -30,7 +30,7 @@ export function ExercisePickerDrawer({
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<MuscleGroup>>(
-    new Set()
+    () => new Set(MUSCLE_GROUPS.filter((g) => !splitMuscleGroups.includes(g)))
   );
   const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -40,8 +40,10 @@ export function ExercisePickerDrawer({
     let cancelled = false;
     setLoading(true);
     setShowCreateForm(false);
+    // Re-sync default collapsed set each time the drawer opens
+    setCollapsedGroups(new Set(MUSCLE_GROUPS.filter((g) => !splitMuscleGroups.includes(g))));
 
-    getUserExercisesForGroups(splitMuscleGroups).then((data) => {
+    getAllUserExercises().then((data) => {
       if (cancelled) return;
       setExercises(data.map((d: { exercise: Exercise }) => d.exercise));
       setLoading(false);
@@ -63,8 +65,15 @@ export function ExercisePickerDrawer({
     {} as Record<MuscleGroup, Exercise[]>
   );
 
-  // Sort groups in canonical MUSCLE_GROUPS order
-  const orderedGroups = MUSCLE_GROUPS.filter((mg) => grouped[mg]?.length > 0);
+  // Split groups first (in canonical order), then the rest — so today's split
+  // appears at the top of the picker regardless of MUSCLE_GROUPS ordering.
+  const splitOrdered = MUSCLE_GROUPS.filter(
+    (mg) => grouped[mg]?.length > 0 && splitMuscleGroups.includes(mg)
+  );
+  const otherOrdered = MUSCLE_GROUPS.filter(
+    (mg) => grouped[mg]?.length > 0 && !splitMuscleGroups.includes(mg)
+  );
+  const orderedGroups = [...splitOrdered, ...otherOrdered];
 
   function toggleGroup(group: MuscleGroup) {
     setCollapsedGroups((prev) => {
@@ -123,12 +132,21 @@ export function ExercisePickerDrawer({
           </p>
         ) : (
           <div className="space-y-2">
-            {orderedGroups.map((group) => {
+            {orderedGroups.map((group, idx) => {
               const isCollapsed = collapsedGroups.has(group);
               const colorClasses = MUSCLE_GROUP_COLORS[group];
+              const isInSplit = splitMuscleGroups.includes(group);
+              const prevGroup = idx > 0 ? orderedGroups[idx - 1] : null;
+              const prevInSplit = prevGroup ? splitMuscleGroups.includes(prevGroup) : false;
+              const showDivider = !isInSplit && (idx === 0 || prevInSplit);
 
               return (
                 <div key={group}>
+                  {showDivider && (
+                    <p className="pt-3 pb-1 text-[11px] uppercase tracking-wide text-text-dim font-medium">
+                      Other muscle groups
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={() => toggleGroup(group)}

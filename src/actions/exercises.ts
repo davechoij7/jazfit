@@ -31,6 +31,27 @@ export async function getUserExercisesForGroups(muscleGroups: MuscleGroup[]) {
     }));
 }
 
+export async function getAllUserExercises() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("user_exercises")
+    .select("exercise_id, exercises(*)")
+    .eq("user_id", user.id)
+    .eq("is_available", true);
+
+  if (!data) return [];
+
+  return data.map((ue: any) => ({
+    exercise_id: ue.exercise_id,
+    exercise: ue.exercises as Exercise,
+  }));
+}
+
 export async function createCustomExercise(
   name: string,
   muscleGroups: MuscleGroup[],

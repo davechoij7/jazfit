@@ -9,7 +9,7 @@ interface SetRowProps {
   weightStep?: number;
   onUpdateWeight: (value: number) => void;
   onUpdateReps: (value: number) => void;
-  onComplete: () => void;
+  onDelete: () => void;
 }
 
 const rowVariants = {
@@ -17,7 +17,7 @@ const rowVariants = {
   idle: {},
 };
 
-export function SetRow({ set, weightStep = 5, onUpdateWeight, onUpdateReps, onComplete }: SetRowProps) {
+export function SetRow({ set, weightStep = 5, onUpdateWeight, onUpdateReps, onDelete }: SetRowProps) {
   return (
     <motion.div
       variants={rowVariants}
@@ -37,12 +37,12 @@ export function SetRow({ set, weightStep = 5, onUpdateWeight, onUpdateReps, onCo
       {/* Weight + reps inputs */}
       <motion.div
         className="flex gap-3 flex-1"
-        animate={{ opacity: set.isCompleted ? 0.5 : 1 }}
+        animate={{ opacity: set.isCompleted ? 0.85 : 1 }}
         transition={{ duration: 0.2 }}
       >
         {/* Weight input */}
         <NumberInput
-          value={set.isCompleted ? set.actualWeight : (set.actualWeight ?? set.targetWeight)}
+          value={set.actualWeight ?? set.targetWeight}
           onChange={onUpdateWeight}
           step={weightStep}
           min={0}
@@ -52,7 +52,7 @@ export function SetRow({ set, weightStep = 5, onUpdateWeight, onUpdateReps, onCo
 
         {/* Reps input */}
         <NumberInput
-          value={set.isCompleted ? set.actualReps : (set.actualReps ?? set.targetReps)}
+          value={set.actualReps ?? set.targetReps}
           onChange={onUpdateReps}
           step={1}
           min={0}
@@ -72,25 +72,22 @@ export function SetRow({ set, weightStep = 5, onUpdateWeight, onUpdateReps, onCo
         </motion.span>
       )}
 
-      {/* Done button */}
-      {set.isCompleted ? (
-        <div className="w-12 h-12 rounded-xl bg-success/20 flex items-center justify-center shrink-0">
-          <svg className="w-6 h-6 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
-        </div>
-      ) : (
-        <motion.button
-          type="button"
-          onClick={onComplete}
-          whileTap={{ scale: 0.96 }}
-          transition={{ type: "spring", stiffness: 400, damping: 20 }}
-          className="w-12 h-12 rounded-xl bg-accent text-white flex items-center justify-center shrink-0
-                     active:bg-accent-muted select-none touch-manipulation font-bold text-sm"
-        >
-          Done
-        </motion.button>
-      )}
+      {/* Delete set */}
+      <motion.button
+        type="button"
+        onClick={onDelete}
+        whileTap={{ scale: 0.92 }}
+        aria-label="Delete set"
+        className="w-12 h-12 rounded-xl bg-bg-elevated text-text-dim flex items-center justify-center shrink-0
+                   active:bg-error/10 active:text-error select-none touch-manipulation"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+        </svg>
+      </motion.button>
     </motion.div>
   );
 }

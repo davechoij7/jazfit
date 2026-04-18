@@ -18,6 +18,8 @@ import {
   completeWorkoutSession,
   updateWorkoutDate,
   getExerciseHistory,
+  deleteSetLog,
+  deleteExerciseLog,
 } from "@/actions/workout";
 import { getProgressiveOverload } from "@/lib/workout-engine";
 import { ALL_SPLITS, NON_STRENGTH_SPLITS, SPLIT_GROUPS, DEFAULT_REST_TIMER } from "@/lib/constants";
@@ -161,30 +163,55 @@ function ActiveWorkoutContent() {
     [workout]
   );
 
-  // Handle completing a set
-  const handleCompleteSet = useCallback(
+  // Auto-complete side effects: when a set transitions to completed via UPDATE_SET,
+  // the reducer stamps lastCompletedSetKey. Start rest timer + persist, then clear.
+  useEffect(() => {
+    const key = workout.state.lastCompletedSetKey;
+    if (!key) return;
+    const [exStr, setStr] = key.split(":");
+    const exerciseIndex = Number(exStr);
+    const setIndex = Number(setStr);
+    const exerciseState = workout.state.exercises[exerciseIndex];
+    const set = exerciseState?.sets[setIndex];
+
+    if (exerciseState?.exerciseLogId && set) {
+      logSet(
+        exerciseState.exerciseLogId,
+        set.setNumber,
+        set.targetWeight,
+        set.actualWeight ?? set.targetWeight,
+        set.targetReps,
+        set.actualReps ?? set.targetReps
+      ).catch(() => {});
+    }
+
+    restTimer.start(DEFAULT_REST_TIMER);
+    workout.dispatch({ type: "CLEAR_LAST_COMPLETED" });
+  }, [workout.state.lastCompletedSetKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle deleting a set — removes from state and from DB (no-op if never persisted).
+  const handleDeleteSet = useCallback(
     (setIndex: number) => {
       const exerciseIndex = workout.state.currentExerciseIndex;
-      workout.dispatch({ type: "COMPLETE_SET", exerciseIndex, setIndex });
-
-      // Persist to DB in background
       const exerciseState = workout.state.exercises[exerciseIndex];
-      if (exerciseState?.exerciseLogId) {
-        const set = exerciseState.sets[setIndex];
-        logSet(
-          exerciseState.exerciseLogId,
-          set.setNumber,
-          set.targetWeight,
-          set.actualWeight ?? set.targetWeight,
-          set.targetReps,
-          set.actualReps ?? set.targetReps
-        ).catch(() => {});
+      const set = exerciseState?.sets[setIndex];
+      workout.dispatch({ type: "DELETE_SET", exerciseIndex, setIndex });
+      if (exerciseState?.exerciseLogId && set) {
+        deleteSetLog(exerciseState.exerciseLogId, set.setNumber).catch(() => {});
       }
-
-      restTimer.start(DEFAULT_REST_TIMER);
     },
-    [workout, restTimer]
+    [workout]
   );
+
+  // Handle deleting the current exercise — cascades set_logs in DB via FK.
+  const handleDeleteExercise = useCallback(() => {
+    const exerciseIndex = workout.state.currentExerciseIndex;
+    const exerciseState = workout.state.exercises[exerciseIndex];
+    workout.dispatch({ type: "DELETE_EXERCISE", exerciseIndex });
+    if (exerciseState?.exerciseLogId) {
+      deleteExerciseLog(exerciseState.exerciseLogId).catch(() => {});
+    }
+  }, [workout]);
 
   // Handle completing workout
   const handleComplete = useCallback(() => {
@@ -376,13 +403,14 @@ function ActiveWorkoutContent() {
                   value,
                 })
               }
-              onCompleteSet={handleCompleteSet}
+              onDeleteSet={handleDeleteSet}
               onAddSet={() =>
                 workout.dispatch({
                   type: "ADD_SET",
                   exerciseIndex: workout.state.currentExerciseIndex,
                 })
               }
+              onDeleteExercise={handleDeleteExercise}
             />
 
             {/* Navigation + Add buttons */}

@@ -26,6 +26,7 @@ export interface ActiveWorkoutState {
   currentExerciseIndex: number;
   startedAt: number; // timestamp
   status: "ready" | "active" | "complete";
+  lastCompletedSetKey: string | null; // "<exerciseIndex>:<setIndex>" when a set just auto-completed
 }
 
 // --- Actions ---
@@ -36,7 +37,10 @@ type Action =
   | { type: "SET_EXERCISE_LOG_ID"; exerciseIndex: number; logId: string }
   | { type: "UPDATE_SET"; exerciseIndex: number; setIndex: number; field: "actualWeight" | "actualReps"; value: number }
   | { type: "COMPLETE_SET"; exerciseIndex: number; setIndex: number }
+  | { type: "CLEAR_LAST_COMPLETED" }
   | { type: "ADD_SET"; exerciseIndex: number }
+  | { type: "DELETE_SET"; exerciseIndex: number; setIndex: number }
+  | { type: "DELETE_EXERCISE"; exerciseIndex: number }
   | { type: "NEXT_EXERCISE" }
   | { type: "PREV_EXERCISE" }
   | { type: "GO_TO_EXERCISE"; index: number }
@@ -55,6 +59,7 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
         status: "active",
         startedAt: Date.now(),
         currentExerciseIndex: 0,
+        lastCompletedSetKey: null,
       };
 
     case "ADD_EXERCISE": {
@@ -103,13 +108,32 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       const exercises = [...state.exercises];
       const ex = { ...exercises[action.exerciseIndex] };
       const sets = [...ex.sets];
-      sets[action.setIndex] = {
-        ...sets[action.setIndex],
-        [action.field]: action.value,
-      };
+      const prev = sets[action.setIndex];
+      const next = { ...prev, [action.field]: action.value };
+
+      // Auto-complete: first time EITHER actualWeight or actualReps transitions
+      // from null → a number, mark the set done and fill the other field from target.
+      const wasNull = prev[action.field] === null;
+      let justCompleted = false;
+      if (!prev.isCompleted && wasNull) {
+        if (next.actualWeight === null) next.actualWeight = next.targetWeight;
+        if (next.actualReps === null) next.actualReps = next.targetReps;
+        next.isCompleted = true;
+        const actualWeight = next.actualWeight ?? 0;
+        next.isPR = ex.allTimeMax > 0 && actualWeight > ex.allTimeMax;
+        justCompleted = true;
+      }
+
+      sets[action.setIndex] = next;
       ex.sets = sets;
       exercises[action.exerciseIndex] = ex;
-      return { ...state, exercises };
+      return {
+        ...state,
+        exercises,
+        lastCompletedSetKey: justCompleted
+          ? `${action.exerciseIndex}:${action.setIndex}`
+          : state.lastCompletedSetKey,
+      };
     }
 
     case "COMPLETE_SET": {
@@ -136,9 +160,10 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       const exercises = [...state.exercises];
       const ex = { ...exercises[action.exerciseIndex] };
       const lastSet = ex.sets[ex.sets.length - 1];
+      const nextNumber = ex.sets.reduce((n, s) => Math.max(n, s.setNumber), 0) + 1;
       const newSet: ActiveSet = {
         id: crypto.randomUUID(),
-        setNumber: ex.sets.length + 1,
+        setNumber: nextNumber,
         targetWeight: lastSet?.targetWeight ?? null,
         targetReps: lastSet?.targetReps ?? DEFAULT_REPS_PER_SET,
         actualWeight: null,
@@ -149,6 +174,29 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       exercises[action.exerciseIndex] = ex;
       return { ...state, exercises };
     }
+
+    case "DELETE_SET": {
+      const exercises = [...state.exercises];
+      const ex = { ...exercises[action.exerciseIndex] };
+      ex.sets = ex.sets.filter((_, i) => i !== action.setIndex);
+      exercises[action.exerciseIndex] = ex;
+      return { ...state, exercises };
+    }
+
+    case "DELETE_EXERCISE": {
+      const exercises = state.exercises.filter((_, i) => i !== action.exerciseIndex);
+      let nextIndex = state.currentExerciseIndex;
+      if (action.exerciseIndex < state.currentExerciseIndex) {
+        nextIndex = state.currentExerciseIndex - 1;
+      }
+      if (nextIndex >= exercises.length) {
+        nextIndex = Math.max(0, exercises.length - 1);
+      }
+      return { ...state, exercises, currentExerciseIndex: nextIndex };
+    }
+
+    case "CLEAR_LAST_COMPLETED":
+      return { ...state, lastCompletedSetKey: null };
 
     case "NEXT_EXERCISE":
       if (state.currentExerciseIndex < state.exercises.length - 1) {
@@ -172,7 +220,9 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       return { ...state, status: "complete" };
 
     case "RESTORE":
-      return action.state;
+      // Always null the pending-completion marker on restore so a refresh
+      // mid-completion doesn't trigger a duplicate logSet.
+      return { ...action.state, lastCompletedSetKey: null };
 
     default:
       return state;
@@ -190,6 +240,7 @@ function createInitialState(): ActiveWorkoutState {
     currentExerciseIndex: 0,
     startedAt: Date.now(),
     status: "ready",
+    lastCompletedSetKey: null,
   };
 }
 

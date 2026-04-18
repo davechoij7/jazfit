@@ -112,6 +112,33 @@ export async function logSet(
   if (error) throw new Error(error.message);
 }
 
+export async function deleteSetLog(exerciseLogId: string, setNumber: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("set_logs")
+    .delete()
+    .eq("exercise_log_id", exerciseLogId)
+    .eq("set_number", setNumber);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteExerciseLog(exerciseLogId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("exercise_logs")
+    .delete()
+    .eq("id", exerciseLogId);
+
+  if (error) throw new Error(error.message);
+}
+
 export async function completeWorkoutSession(
   sessionId: string,
   durationSeconds: number,
