@@ -29,6 +29,17 @@ function buildWeekDays(): string[] {
   return days;
 }
 
+function formatSyncAge(lastSyncedAt: Date): string {
+  const diffMs = Date.now() - lastSyncedAt.getTime();
+  const mins = Math.floor(diffMs / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
 export function StepsCard({ data, goal = 10_000 }: StepsCardProps) {
   const weekDays = buildWeekDays();
   const stepsByDate = new Map(data.map((d) => [d.date, d.step_count]));
@@ -49,6 +60,16 @@ export function StepsCard({ data, goal = 10_000 }: StepsCardProps) {
       : todaySteps.toString();
 
   const goalMet = todaySteps >= goal;
+
+  // Most recent sync across any day in the window
+  const lastSyncedAt = data.reduce<Date | null>((latest, d) => {
+    const t = new Date(d.created_at);
+    return !latest || t > latest ? t : latest;
+  }, null);
+  const syncAgeLabel = lastSyncedAt ? formatSyncAge(lastSyncedAt) : null;
+  const isStale =
+    lastSyncedAt !== null &&
+    Date.now() - lastSyncedAt.getTime() > 36 * 60 * 60 * 1000;
 
   return (
     <div
@@ -80,6 +101,14 @@ export function StepsCard({ data, goal = 10_000 }: StepsCardProps) {
           ) : (
             <p className="text-xl font-display leading-none mt-1 text-[#B8A0A6]">
               —
+            </p>
+          )}
+          {syncAgeLabel && (
+            <p
+              className="text-[10px] mt-1.5"
+              style={{ color: isStale ? "#C4808E" : "#B8A0A6" }}
+            >
+              Synced {syncAgeLabel}
             </p>
           )}
         </div>

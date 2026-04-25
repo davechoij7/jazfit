@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 export interface DailyStep {
   date: string;       // YYYY-MM-DD
   step_count: number;
+  created_at: string; // ISO timestamp of last sync for this date
 }
 
 /**
@@ -28,7 +29,7 @@ export async function getLast7DaysSteps(): Promise<DailyStep[]> {
 
   const { data, error } = await supabase
     .from("daily_steps")
-    .select("date, step_count")
+    .select("date, step_count, created_at")
     .eq("user_id", user.id)
     .gte("date", startDate)
     .lte("date", endDate)

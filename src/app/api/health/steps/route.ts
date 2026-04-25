@@ -163,6 +163,43 @@ async function backfillStickers(
   }
 }
 
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get("authorization") ?? "";
+  const secret = process.env.HEALTH_API_SECRET;
+
+  if (!secret || authHeader !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = process.env.HEALTH_USER_ID;
+  if (!userId) {
+    return NextResponse.json(
+      { error: "HEALTH_USER_ID not configured" },
+      { status: 500 }
+    );
+  }
+
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("daily_steps")
+    .select("date, step_count, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    lastSyncAt: data?.created_at ?? null,
+    lastDate: data?.date ?? null,
+    lastSteps: data?.step_count ?? null,
+  });
+}
+
 export async function POST(req: NextRequest) {
   // --- Auth ---
   const authHeader = req.headers.get("authorization") ?? "";

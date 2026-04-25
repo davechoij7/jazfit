@@ -34,7 +34,7 @@ export default async function DashboardPage() {
       .gte("date", new Date(Date.now() - 14 * 86400000).toISOString().split("T")[0]),
     supabase
       .from("daily_steps")
-      .select("date, step_count")
+      .select("date, step_count, created_at")
       .eq("user_id", user!.id)
       .gte("date", stepsStart)
       .lte("date", stepsEnd)
