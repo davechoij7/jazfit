@@ -3,13 +3,11 @@
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useWakeLock } from "@/lib/hooks/use-wake-lock";
-import { useRestTimer } from "@/lib/hooks/use-rest-timer";
 import { useActiveWorkout } from "@/lib/hooks/use-active-workout";
 import { useSaveStatus } from "@/lib/hooks/use-save-status";
 import { SaveIndicator } from "@/components/workout/save-indicator";
 import { ActiveExercise } from "@/components/workout/active-exercise";
 import { ExercisePickerDrawer } from "@/components/workout/exercise-picker-drawer";
-import { RestTimerOverlay } from "@/components/workout/rest-timer-overlay";
 import { WorkoutCompletionOverlay } from "@/components/workout/workout-completion-overlay";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -25,7 +23,7 @@ import {
   deleteExerciseLog,
 } from "@/actions/workout";
 import { getProgressiveOverload } from "@/lib/workout-engine";
-import { ALL_SPLITS, NON_STRENGTH_SPLITS, SPLIT_GROUPS, DEFAULT_REST_TIMER, DEFAULT_SETS_PER_EXERCISE, DEFAULT_REPS_PER_SET } from "@/lib/constants";
+import { ALL_SPLITS, NON_STRENGTH_SPLITS, SPLIT_GROUPS, DEFAULT_SETS_PER_EXERCISE, DEFAULT_REPS_PER_SET } from "@/lib/constants";
 import type { Exercise, MuscleGroup, WorkoutSplit, StrengthSplit, NonStrengthSplit, ActiveSet } from "@/lib/types";
 import type { ActiveWorkoutState } from "@/lib/hooks/use-active-workout";
 import type { ActiveWorkoutSnapshot } from "@/actions/workout";
@@ -116,10 +114,6 @@ function ActiveWorkoutContent() {
 
   const workout = useActiveWorkout();
   const save = useSaveStatus();
-
-  const restTimer = useRestTimer({
-    onComplete: () => {},
-  });
 
   // Elapsed time display
   useEffect(() => {
@@ -288,7 +282,6 @@ function ActiveWorkoutContent() {
       );
     }
 
-    restTimer.start(DEFAULT_REST_TIMER);
     workout.dispatch({ type: "CLEAR_LAST_COMPLETED" });
   }, [workout.state.lastCompletedSetKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -574,17 +567,6 @@ function ActiveWorkoutContent() {
           onSelect={handleAddExercise}
           splitMuscleGroups={splitMuscleGroups}
           alreadyAddedIds={workout.state.exercises.map((ex) => ex.exercise.id)}
-        />
-      )}
-
-      {/* Rest timer overlay */}
-      {!isNonStrength && (
-        <RestTimerOverlay
-          isOpen={restTimer.isRunning}
-          duration={restTimer.duration}
-          remaining={restTimer.remaining}
-          onChangeDuration={(s) => restTimer.start(s)}
-          onSkip={restTimer.skip}
         />
       )}
 

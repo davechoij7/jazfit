@@ -89,10 +89,6 @@ export function getWeightIncrement(equipmentType: EquipmentType): number {
   return WEIGHT_INCREMENT_BY_EQUIPMENT[equipmentType] ?? DEFAULT_WEIGHT_INCREMENT;
 }
 
-// Rest timer presets in seconds
-export const REST_TIMER_PRESETS = [60, 90, 120] as const;
-export const DEFAULT_REST_TIMER = 90;
-
 // Default sets and reps per exercise
 export const DEFAULT_SETS_PER_EXERCISE = 3;
 export const DEFAULT_REPS_PER_SET = 10;

@@ -32,7 +32,6 @@ export interface Profile {
 }
 
 export interface ProfilePreferences {
-  restTimerDuration?: number; // 60, 90, or 120 seconds
   onboardingComplete?: boolean;
 }
 
