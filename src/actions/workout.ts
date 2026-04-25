@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { computeStreak } from "@/lib/workout-engine";
-import type { Exercise, MuscleGroup, WorkoutSplit } from "@/lib/types";
+import { NON_STRENGTH_SPLITS } from "@/lib/constants";
+import type { Exercise, MuscleGroup, NonStrengthSplit, WorkoutSplit } from "@/lib/types";
 
 export async function createWorkoutSession(
   muscleGroups: MuscleGroup[],
@@ -245,14 +246,22 @@ export async function getActiveWorkout(): Promise<ActiveWorkoutSnapshot | null> 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: session } = await supabase
+  // Pull all in-progress sessions so we can skip phantom strength sessions
+  // (started-but-never-logged rows left behind when the user taps Start and
+  // navigates away). Non-strength workouts have no exercise_logs by design, so
+  // they're always considered resumable.
+  const { data: candidates } = await supabase
     .from("workout_sessions")
-    .select("id, workout_type, muscle_groups_focus, created_at")
+    .select("id, workout_type, muscle_groups_focus, created_at, exercise_logs(id)")
     .eq("user_id", user.id)
     .is("completed_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
+
+  const session = (candidates ?? []).find((s: any) => {
+    const isNonStrength = NON_STRENGTH_SPLITS.has(s.workout_type as NonStrengthSplit);
+    const hasLogs = Array.isArray(s.exercise_logs) && s.exercise_logs.length > 0;
+    return isNonStrength || hasLogs;
+  });
 
   if (!session) return null;
 

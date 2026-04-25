@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 import { useRestTimer } from "@/lib/hooks/use-rest-timer";
 import { useActiveWorkout } from "@/lib/hooks/use-active-workout";
+import { useSaveStatus } from "@/lib/hooks/use-save-status";
+import { SaveIndicator } from "@/components/workout/save-indicator";
 import { ActiveExercise } from "@/components/workout/active-exercise";
 import { ExercisePickerDrawer } from "@/components/workout/exercise-picker-drawer";
 import { RestTimerOverlay } from "@/components/workout/rest-timer-overlay";
@@ -113,6 +115,7 @@ function ActiveWorkoutContent() {
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   const workout = useActiveWorkout();
+  const save = useSaveStatus();
 
   const restTimer = useRestTimer({
     onComplete: () => {},
@@ -184,10 +187,16 @@ function ActiveWorkoutContent() {
         ? []
         : SPLIT_GROUPS[splitParam as StrengthSplit];
 
-      // Create session in DB (use local date, not UTC)
-      const now = new Date();
-      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-      const sessionId = await createWorkoutSession(muscleGroups, splitParam, localDate);
+      // Non-strength sessions never produce exercise_logs, so we create them
+      // up-front. Strength sessions defer DB creation until the first exercise
+      // is added — otherwise every tap of Start leaves a "phantom" in-progress
+      // row that makes Resume Workout appear forever with nothing to resume.
+      let sessionId: string | null = null;
+      if (isNonStrengthInit) {
+        const now = new Date();
+        const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        sessionId = await createWorkoutSession(muscleGroups, splitParam, localDate);
+      }
 
       // Initialize empty workout
       workout.dispatch({
@@ -206,12 +215,26 @@ function ActiveWorkoutContent() {
   // Handle adding an exercise from the picker
   const handleAddExercise = useCallback(
     async (exercise: Exercise) => {
-      if (!workout.state.sessionId) return;
+      if (!workout.state.split) return;
+
+      // Lazy-create the session row on the first exercise add. See init() for
+      // why strength splits defer creation — prevents phantom "resume" rows.
+      let sessionId: string;
+      if (workout.state.sessionId) {
+        sessionId = workout.state.sessionId;
+      } else {
+        sessionId = await createWorkoutSession(
+          workout.state.muscleGroups as MuscleGroup[],
+          workout.state.split as WorkoutSplit,
+          workoutDate
+        );
+        workout.dispatch({ type: "SET_SESSION_ID", sessionId });
+      }
 
       // Create exercise log + fetch history in parallel
       const [logId, history] = await Promise.all([
         createExerciseLog(
-          workout.state.sessionId,
+          sessionId,
           exercise.id,
           workout.state.exercises.length
         ),
@@ -237,7 +260,7 @@ function ActiveWorkoutContent() {
 
       workout.addExercise(exercise, logId, overload, allTimeMax);
     },
-    [workout]
+    [workout, workoutDate]
   );
 
   // Auto-complete side effects: when a set transitions to completed via UPDATE_SET,
@@ -252,14 +275,17 @@ function ActiveWorkoutContent() {
     const set = exerciseState?.sets[setIndex];
 
     if (exerciseState?.exerciseLogId && set) {
-      upsertSet(
-        exerciseState.exerciseLogId,
-        set.setNumber,
-        set.targetWeight,
-        set.actualWeight ?? set.targetWeight,
-        set.targetReps,
-        set.actualReps ?? set.targetReps
-      ).catch(() => {});
+      const logId = exerciseState.exerciseLogId;
+      void save.track(() =>
+        upsertSet(
+          logId,
+          set.setNumber,
+          set.targetWeight,
+          set.actualWeight ?? set.targetWeight,
+          set.targetReps,
+          set.actualReps ?? set.targetReps
+        )
+      );
     }
 
     restTimer.start(DEFAULT_REST_TIMER);
@@ -274,10 +300,11 @@ function ActiveWorkoutContent() {
       const set = exerciseState?.sets[setIndex];
       workout.dispatch({ type: "DELETE_SET", exerciseIndex, setIndex });
       if (exerciseState?.exerciseLogId && set) {
-        deleteSetLog(exerciseState.exerciseLogId, set.setNumber).catch(() => {});
+        const logId = exerciseState.exerciseLogId;
+        void save.track(() => deleteSetLog(logId, set.setNumber));
       }
     },
-    [workout]
+    [workout, save]
   );
 
   // Handle deleting the current exercise — cascades set_logs in DB via FK.
@@ -286,9 +313,10 @@ function ActiveWorkoutContent() {
     const exerciseState = workout.state.exercises[exerciseIndex];
     workout.dispatch({ type: "DELETE_EXERCISE", exerciseIndex });
     if (exerciseState?.exerciseLogId) {
-      deleteExerciseLog(exerciseState.exerciseLogId).catch(() => {});
+      const logId = exerciseState.exerciseLogId;
+      void save.track(() => deleteExerciseLog(logId));
     }
-  }, [workout]);
+  }, [workout, save]);
 
   // Handle completing workout
   const handleComplete = useCallback(() => {
@@ -370,14 +398,21 @@ function ActiveWorkoutContent() {
               if (!newDate) return;
               setWorkoutDate(newDate);
               if (workout.state.sessionId) {
-                updateWorkoutDate(workout.state.sessionId, newDate).catch(() => {});
+                const sid = workout.state.sessionId;
+                void save.track(() => updateWorkoutDate(sid, newDate));
               }
             }}
             className="sr-only"
             tabIndex={-1}
           />
         </div>
-        <div className="w-10" />
+        <div className="min-w-[60px] flex justify-end">
+          <SaveIndicator
+            status={save.status}
+            lastError={save.lastError}
+            onDismissError={save.dismissError}
+          />
+        </div>
       </header>
 
       {/* Exercise tabs - scrollable pills */}

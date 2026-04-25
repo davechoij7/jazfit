@@ -32,7 +32,8 @@ export interface ActiveWorkoutState {
 // --- Actions ---
 
 type Action =
-  | { type: "INIT"; sessionId: string; split: WorkoutSplit; muscleGroups: string[] }
+  | { type: "INIT"; sessionId: string | null; split: WorkoutSplit; muscleGroups: string[] }
+  | { type: "SET_SESSION_ID"; sessionId: string }
   | { type: "ADD_EXERCISE"; exercise: Exercise; exerciseLogId: string | null; previousWeight: number | null; previousReps: number[] | null; suggestedWeight: number | null; shouldProgress: boolean; progressMessage: string | null; allTimeMax: number }
   | { type: "SET_EXERCISE_LOG_ID"; exerciseIndex: number; logId: string }
   | { type: "UPDATE_SET"; exerciseIndex: number; setIndex: number; field: "actualWeight" | "actualReps"; value: number }
@@ -94,6 +95,9 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
         currentExerciseIndex: exercises.length - 1,
       };
     }
+
+    case "SET_SESSION_ID":
+      return { ...state, sessionId: action.sessionId };
 
     case "SET_EXERCISE_LOG_ID": {
       const exercises = [...state.exercises];
