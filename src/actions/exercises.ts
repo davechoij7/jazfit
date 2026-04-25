@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { daysAgoInLA } from "@/lib/dates";
 import type { Exercise, MuscleGroup, EquipmentType } from "@/lib/types";
 
 export async function getUserExercisesForGroups(muscleGroups: MuscleGroup[]) {
@@ -94,14 +95,13 @@ export async function getRecentSessions(days: number = 14) {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - days);
+  const cutoff = daysAgoInLA(days);
 
   const { data } = await supabase
     .from("workout_sessions")
     .select("id, date, muscle_groups_focus, duration_seconds, completed_at")
     .eq("user_id", user.id)
-    .gte("date", cutoffDate.toISOString().split("T")[0])
+    .gte("date", cutoff)
     .order("date", { ascending: false });
 
   return data ?? [];
@@ -114,14 +114,13 @@ export async function getRecentExerciseIds(days: number = 7) {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - days);
+  const cutoff = daysAgoInLA(days);
 
   const { data } = await supabase
     .from("workout_sessions")
     .select("id, exercise_logs(exercise_id)")
     .eq("user_id", user.id)
-    .gte("date", cutoffDate.toISOString().split("T")[0]);
+    .gte("date", cutoff);
 
   if (!data) return [];
 

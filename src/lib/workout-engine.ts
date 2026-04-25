@@ -18,6 +18,7 @@ import {
   EXERCISES_PER_WORKOUT,
   getWeightIncrement,
 } from "./constants";
+import { todayInLA, daysAgoInLA } from "./dates";
 
 /**
  * Suggest today's muscle group based on workout history.
@@ -260,8 +261,8 @@ export function computeStreak(sessions: { date: string }[]): number {
   const dates = [...new Set(sessions.map((s) => s.date))].sort().reverse();
   if (dates.length === 0) return 0;
 
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const today = todayInLA();
+  const yesterday = daysAgoInLA(1);
 
   if (dates[0] !== today && dates[0] !== yesterday) return 0;
 

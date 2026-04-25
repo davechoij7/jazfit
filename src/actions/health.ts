@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { todayInLA, daysAgoInLA } from "@/lib/dates";
 
 export interface DailyStep {
   date: string;       // YYYY-MM-DD
@@ -20,12 +21,8 @@ export async function getLast7DaysSteps(): Promise<DailyStep[]> {
 
   if (!user) return [];
 
-  // Calculate date range in US Eastern (matches iPhone-reported dates)
-  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" });
-  const endDate = fmt.format(new Date());
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-  const startDate = fmt.format(sevenDaysAgo);
+  const endDate = todayInLA();
+  const startDate = daysAgoInLA(6);
 
   const { data, error } = await supabase
     .from("daily_steps")

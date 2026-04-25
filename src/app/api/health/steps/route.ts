@@ -23,6 +23,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { computeStickerSize, STEPS_GOAL, STRENGTH_TYPES } from "@/lib/sticker-utils";
+import { todayInLA, daysAgoInLA } from "@/lib/dates";
 
 function createServiceClient() {
   return createClient(
@@ -91,10 +92,8 @@ async function backfillStickers(
   excludeDates: string[]
 ) {
   const lookbackDays = 7;
-  const start = new Date();
-  start.setDate(start.getDate() - lookbackDays);
-  const startDate = start.toISOString().split("T")[0];
-  const today = new Date().toISOString().split("T")[0];
+  const startDate = daysAgoInLA(lookbackDays);
+  const today = todayInLA();
 
   // Get existing sticker dates so we skip them
   const { data: existingStickers } = await supabase

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { computeStreak } from "@/lib/workout-engine";
 import { NON_STRENGTH_SPLITS } from "@/lib/constants";
+import { todayInLA } from "@/lib/dates";
 import type { Exercise, MuscleGroup, NonStrengthSplit, WorkoutSplit } from "@/lib/types";
 
 export async function createWorkoutSession(
@@ -19,7 +20,7 @@ export async function createWorkoutSession(
     .from("workout_sessions")
     .insert({
       user_id: user.id,
-      date: date ?? new Date().toISOString().split("T")[0],
+      date: date ?? todayInLA(),
       muscle_groups_focus: muscleGroups,
       workout_type: workoutType,
     })

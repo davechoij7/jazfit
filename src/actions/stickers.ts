@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { computeStickerSize } from "@/lib/sticker-utils";
+import { todayInLA, daysAgoInLA } from "@/lib/dates";
 import type { DailySticker } from "@/lib/types";
 
 /**
@@ -15,7 +16,7 @@ export async function getUnseenSticker(): Promise<DailySticker | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date());
+  const today = todayInLA();
 
   const { data } = await supabase
     .from("daily_stickers")
@@ -129,9 +130,7 @@ export async function getStickerHistory(
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  const start = startDate.toISOString().split("T")[0];
+  const start = daysAgoInLA(days);
 
   // Backfill any workout days that are missing sticker rows
   await backfillWorkoutStickers(supabase, user.id, start);

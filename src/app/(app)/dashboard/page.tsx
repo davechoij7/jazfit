@@ -4,6 +4,7 @@ import { DashboardContent } from "@/components/workout/dashboard-content";
 import type { DailyStep } from "@/actions/health";
 import { getUnseenSticker } from "@/actions/stickers";
 import { getActiveWorkout } from "@/actions/workout";
+import { todayInLA, daysAgoInLA } from "@/lib/dates";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -11,12 +12,9 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 7-day date range for steps query (use US Eastern so dates match the iPhone)
-  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }); // en-CA gives YYYY-MM-DD
-  const stepsEnd = fmt.format(new Date());
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-  const stepsStart = fmt.format(sevenDaysAgo);
+  // 7-day date range for steps query (LA time — matches iPhone-reported dates)
+  const stepsEnd = todayInLA();
+  const stepsStart = daysAgoInLA(6);
 
   // Run independent fetches in parallel — all use the SAME supabase client
   // to avoid token refresh race conditions with separate clients
@@ -32,7 +30,7 @@ export default async function DashboardPage() {
       .eq("user_id", user!.id)
       .not("completed_at", "is", null)
       .order("date", { ascending: false })
-      .gte("date", new Date(Date.now() - 14 * 86400000).toISOString().split("T")[0]),
+      .gte("date", daysAgoInLA(14)),
     supabase
       .from("daily_steps")
       .select("date, step_count, created_at")
