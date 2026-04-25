@@ -6,8 +6,6 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ALL_SPLITS, SPLIT_ICONS, SPLIT_IMAGES } from "@/lib/constants";
 import type { WorkoutSplit } from "@/lib/types";
-import type { DailyStep } from "@/actions/health";
-import { StepsCard } from "@/components/workout/steps-card";
 import { WorkoutHistoryRow } from "@/components/workout/workout-history-row";
 import { StickerAnimation } from "@/components/workout/sticker-animation";
 import type { DailySticker } from "@/lib/types";
@@ -15,7 +13,6 @@ import type { DailySticker } from "@/lib/types";
 interface DashboardContentProps {
   hasExercises: boolean;
   suggestedSplit: WorkoutSplit;
-  weeklySteps: DailyStep[];
   recentSessions: { id: string; date: string; workout_type: string | null }[];
   unseenSticker: DailySticker | null;
   activeSession: { sessionId: string; split: WorkoutSplit | null } | null;
@@ -46,7 +43,6 @@ function getLastTrainedLabel(
 export function DashboardContent({
   hasExercises,
   suggestedSplit,
-  weeklySteps,
   recentSessions,
   unseenSticker,
   activeSession,
@@ -253,9 +249,6 @@ export function DashboardContent({
           </>
         )}
       </div>
-
-      {/* Steps card */}
-      <StepsCard data={weeklySteps} goal={10000} />
 
       {/* Workout history row */}
       <WorkoutHistoryRow sessions={recentSessions} />
