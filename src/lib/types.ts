@@ -165,16 +165,15 @@ export interface MuscleGroupStat {
 
 // --- Sticker reward types ---
 
-export type StickerSize = "big" | "medium" | "small" | "none";
+// One sticker per day, only awarded for completed strength workouts. The
+// workout_type drives which Snoopy is rendered (Upper-Snoopy / Lower-Snoopy).
+export type StickerWorkoutType = Extract<WorkoutSplit, "Upper" | "Lower">;
 
 export interface DailySticker {
   id: string;
   user_id: string;
   date: string; // YYYY-MM-DD
-  sticker_size: StickerSize;
-  had_workout: boolean;
-  had_10k_steps: boolean;
-  step_count: number | null;
+  workout_type: StickerWorkoutType;
   seen_at: string | null;
   created_at: string;
 }

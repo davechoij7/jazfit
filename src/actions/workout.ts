@@ -154,17 +154,37 @@ export async function completeWorkoutSession(
   notes?: string
 ) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
 
-  const { error } = await supabase
+  const completedAt = new Date().toISOString();
+
+  const { data: session, error } = await supabase
     .from("workout_sessions")
     .update({
       duration_seconds: durationSeconds,
       notes: notes || null,
-      completed_at: new Date().toISOString(),
+      completed_at: completedAt,
     })
-    .eq("id", sessionId);
+    .eq("id", sessionId)
+    .eq("user_id", user.id)
+    .select("date, workout_type")
+    .single();
 
   if (error) throw new Error(error.message);
+
+  // Strength workouts (Upper / Lower) earn a daily sticker. Yoga / Walk / Run
+  // / Barre still log normally but don't surface a sticker reward.
+  if (session?.workout_type === "Upper" || session?.workout_type === "Lower") {
+    await supabase.from("daily_stickers").upsert(
+      {
+        user_id: user.id,
+        date: session.date,
+        workout_type: session.workout_type,
+      },
+      { onConflict: "user_id,date" }
+    );
+  }
 }
 
 export async function deleteWorkoutSession(sessionId: string) {

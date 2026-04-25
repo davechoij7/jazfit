@@ -3,62 +3,43 @@
 /**
  * StickerAnimation — morning reward overlay.
  *
- * EASILY EDITABLE: To change the animation visuals, edit the STICKER_CONFIG
- * object below and/or swap out the motion variants. The component shell
- * (overlay, dismiss logic, mark-as-seen) stays the same.
+ * Plays once per day after Jaz completes a strength workout. The Snoopy that
+ * appears matches the workout type (Upper or Lower).
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { markStickerSeen } from "@/actions/stickers";
-import type { StickerSize } from "@/lib/types";
+import { SPLIT_IMAGES } from "@/lib/constants";
+import type { StickerWorkoutType } from "@/lib/types";
 
-// ─── EDIT THIS SECTION TO CHANGE STICKER VISUALS ───────────────────────
-// Each tier gets: emoji, label, message, particle count, color accent
 const STICKER_CONFIG: Record<
-  Exclude<StickerSize, "none">,
-  {
-    emoji: string;
-    label: string;
-    message: string;
-    particles: number;
-    accentColor: string;
-    bgGradient: string;
-  }
+  StickerWorkoutType,
+  { label: string; message: string; accentColor: string; bgGradient: string }
 > = {
-  big: {
-    emoji: "🌟",
-    label: "Gold Star",
-    message: "Strength + 10K steps. Unstoppable.",
-    particles: 24,
-    accentColor: "#D4A960",
-    bgGradient: "radial-gradient(circle at 50% 40%, rgba(212,169,96,0.3) 0%, rgba(196,128,142,0.15) 60%, transparent 100%)",
-  },
-  medium: {
-    emoji: "🌸",
-    label: "Bloom",
+  Upper: {
+    label: "Upper Day",
     message: "Strength session done. You showed up.",
-    particles: 14,
     accentColor: "#C4808E",
-    bgGradient: "radial-gradient(circle at 50% 40%, rgba(196,128,142,0.25) 0%, rgba(240,196,206,0.15) 60%, transparent 100%)",
+    bgGradient:
+      "radial-gradient(circle at 50% 40%, rgba(196,128,142,0.25) 0%, rgba(240,196,206,0.15) 60%, transparent 100%)",
   },
-  small: {
-    emoji: "🌿",
-    label: "Sprout",
-    message: "10K steps yesterday. Keep moving.",
-    particles: 8,
-    accentColor: "#7EBF8E",
-    bgGradient: "radial-gradient(circle at 50% 40%, rgba(126,191,142,0.2) 0%, rgba(196,128,142,0.1) 60%, transparent 100%)",
+  Lower: {
+    label: "Lower Day",
+    message: "Legs in the bag. Keep going.",
+    accentColor: "#7A3347",
+    bgGradient:
+      "radial-gradient(circle at 50% 40%, rgba(122,51,71,0.25) 0%, rgba(196,128,142,0.15) 60%, transparent 100%)",
   },
 };
 
-// Particle emojis that float up during the animation
 const PARTICLE_POOL = ["✨", "🌸", "💫", "🌷", "🩷", "⭐"];
-// ─── END EDITABLE SECTION ──────────────────────────────────────────────
+const PARTICLE_COUNT = 18;
 
 interface Props {
   stickerId: string;
-  stickerSize: Exclude<StickerSize, "none">;
+  workoutType: StickerWorkoutType;
   date: string;
 }
 
@@ -66,9 +47,10 @@ function randomBetween(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
-export function StickerAnimation({ stickerId, stickerSize, date }: Props) {
+export function StickerAnimation({ stickerId, workoutType }: Props) {
   const [visible, setVisible] = useState(true);
-  const config = STICKER_CONFIG[stickerSize];
+  const config = STICKER_CONFIG[workoutType];
+  const snoopySrc = SPLIT_IMAGES[workoutType];
   const markedRef = useRef(false);
 
   // Mark as seen immediately on mount so refreshes don't re-trigger
@@ -83,9 +65,8 @@ export function StickerAnimation({ stickerId, stickerSize, date }: Props) {
     setVisible(false);
   }, []);
 
-  // Generate stable particles on first render
   const [particles] = useState(() =>
-    Array.from({ length: config.particles }, (_, i) => ({
+    Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
       id: i,
       emoji: PARTICLE_POOL[Math.floor(Math.random() * PARTICLE_POOL.length)],
       x: randomBetween(10, 90),
@@ -107,13 +88,11 @@ export function StickerAnimation({ stickerId, stickerSize, date }: Props) {
           style={{ background: "rgba(45, 26, 32, 0.6)" }}
           onClick={handleDismiss}
         >
-          {/* Glow background */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{ background: config.bgGradient }}
           />
 
-          {/* Floating particles */}
           {particles.map((p) => (
             <motion.span
               key={p.id}
@@ -138,7 +117,6 @@ export function StickerAnimation({ stickerId, stickerSize, date }: Props) {
             </motion.span>
           ))}
 
-          {/* Main sticker */}
           <motion.div
             className="relative flex flex-col items-center gap-4"
             initial={{ scale: 0, rotate: -20 }}
@@ -150,29 +128,33 @@ export function StickerAnimation({ stickerId, stickerSize, date }: Props) {
               delay: 0.1,
             }}
           >
-            {/* Emoji ring */}
             <div
-              className="w-28 h-28 rounded-full flex items-center justify-center"
+              className="w-40 h-40 rounded-full flex items-center justify-center"
               style={{
                 background: `rgba(255,255,255,0.15)`,
                 border: `2px solid ${config.accentColor}`,
                 boxShadow: `0 0 40px ${config.accentColor}40`,
               }}
             >
-              <motion.span
-                className="text-6xl select-none"
-                animate={{ scale: [1, 1.15, 1] }}
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
                 transition={{
                   repeat: Infinity,
                   duration: 2,
                   ease: "easeInOut",
                 }}
               >
-                {config.emoji}
-              </motion.span>
+                <Image
+                  src={snoopySrc}
+                  alt={`${workoutType} workout sticker`}
+                  width={130}
+                  height={130}
+                  className="object-contain select-none"
+                  priority
+                />
+              </motion.div>
             </div>
 
-            {/* Label */}
             <motion.div
               className="text-center"
               initial={{ opacity: 0, y: 10 }}
@@ -190,7 +172,6 @@ export function StickerAnimation({ stickerId, stickerSize, date }: Props) {
               </p>
             </motion.div>
 
-            {/* Tap to dismiss hint */}
             <motion.p
               className="text-xs text-white/40 mt-6"
               initial={{ opacity: 0 }}

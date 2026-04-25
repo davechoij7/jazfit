@@ -84,10 +84,10 @@ export function DashboardContent({
   return (
     <div className="px-4 pt-6 space-y-4 pb-8">
       {/* Morning sticker animation */}
-      {unseenSticker && unseenSticker.sticker_size !== "none" && (
+      {unseenSticker && (
         <StickerAnimation
           stickerId={unseenSticker.id}
-          stickerSize={unseenSticker.sticker_size as Exclude<typeof unseenSticker.sticker_size, "none">}
+          workoutType={unseenSticker.workout_type}
           date={unseenSticker.date}
         />
       )}
