@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -18,6 +18,7 @@ interface DashboardContentProps {
   weeklySteps: DailyStep[];
   recentSessions: { id: string; date: string; workout_type: string | null }[];
   unseenSticker: DailySticker | null;
+  activeSession: { sessionId: string; split: WorkoutSplit | null } | null;
 }
 
 
@@ -48,25 +49,9 @@ export function DashboardContent({
   weeklySteps,
   recentSessions,
   unseenSticker,
+  activeSession,
 }: DashboardContentProps) {
   const [selectedSplit, setSelectedSplit] = useState<WorkoutSplit>(suggestedSplit);
-  const [activeSession, setActiveSession] = useState<{
-    sessionId: string;
-    split: WorkoutSplit;
-  } | null>(null);
-
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("jazfit-active-workout");
-      console.log("[dashboard] sessionStorage raw:", raw ? `${raw.slice(0, 120)}…` : "null");
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      console.log("[dashboard] parsed:", { status: parsed?.status, sessionId: parsed?.sessionId, split: parsed?.split });
-      if (parsed?.status === "active" && parsed?.sessionId && parsed?.split) {
-        setActiveSession({ sessionId: parsed.sessionId, split: parsed.split });
-      }
-    } catch (e) { console.error("[dashboard] sessionStorage error:", e); }
-  }, []);
 
   const greeting = getGreeting();
 
@@ -77,7 +62,10 @@ export function DashboardContent({
   }
 
   const displayName = splitDisplayName(selectedSplit);
-  const activeDisplayName = activeSession ? splitDisplayName(activeSession.split) : null;
+  // If an in-progress workout exists but predates the workout_type column, fall
+  // back to "Workout" so the resume card still renders.
+  const resumableSplit: WorkoutSplit | null = activeSession?.split ?? null;
+  const activeDisplayName = resumableSplit ? splitDisplayName(resumableSplit) : "Workout";
   const lastTrained = getLastTrainedLabel(recentSessions, selectedSplit);
 
   if (!hasExercises) {
@@ -145,13 +133,15 @@ export function DashboardContent({
                     border: "1px solid rgba(255,255,255,0.3)",
                   }}
                 >
-                  <Image
-                    src={SPLIT_IMAGES[activeSession.split]}
-                    alt={activeDisplayName!}
-                    width={80}
-                    height={80}
-                    className="object-contain"
-                  />
+                  {resumableSplit && (
+                    <Image
+                      src={SPLIT_IMAGES[resumableSplit]}
+                      alt={activeDisplayName}
+                      width={80}
+                      height={80}
+                      className="object-contain"
+                    />
+                  )}
                 </div>
               </motion.div>
             </div>

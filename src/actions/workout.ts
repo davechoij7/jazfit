@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { computeStreak } from "@/lib/workout-engine";
-import type { MuscleGroup, WorkoutSplit } from "@/lib/types";
+import type { Exercise, MuscleGroup, WorkoutSplit } from "@/lib/types";
 
 export async function createWorkoutSession(
   muscleGroups: MuscleGroup[],
@@ -89,7 +89,7 @@ export async function createExerciseLog(
   return data.id;
 }
 
-export async function logSet(
+export async function upsertSet(
   exerciseLogId: string,
   setNumber: number,
   targetWeight: number | null,
@@ -99,15 +99,22 @@ export async function logSet(
 ) {
   const supabase = await createClient();
 
-  const { error } = await supabase.from("set_logs").insert({
-    exercise_log_id: exerciseLogId,
-    set_number: setNumber,
-    target_weight: targetWeight,
-    actual_weight: actualWeight,
-    target_reps: targetReps,
-    actual_reps: actualReps,
-    completed_at: new Date().toISOString(),
-  });
+  // Upsert on the (exercise_log_id, set_number) unique key so edits to an
+  // already-persisted set write through instead of creating duplicates.
+  const { error } = await supabase
+    .from("set_logs")
+    .upsert(
+      {
+        exercise_log_id: exerciseLogId,
+        set_number: setNumber,
+        target_weight: targetWeight,
+        actual_weight: actualWeight,
+        target_reps: targetReps,
+        actual_reps: actualReps,
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "exercise_log_id,set_number" }
+    );
 
   if (error) throw new Error(error.message);
 }
@@ -207,6 +214,80 @@ export async function getWorkoutStats(): Promise<WorkoutStats> {
   const mostUsedSplit = (sortedEntries[0]?.[0] ?? null) as WorkoutSplit | null;
 
   return { totalWorkouts, streak, mostUsedSplit };
+}
+
+export interface ActiveWorkoutSnapshot {
+  sessionId: string;
+  split: WorkoutSplit | null;
+  muscleGroups: MuscleGroup[];
+  startedAt: number;
+  exercises: {
+    exerciseLogId: string;
+    exercise: Exercise;
+    sets: {
+      setNumber: number;
+      targetWeight: number | null;
+      actualWeight: number | null;
+      targetReps: number | null;
+      actualReps: number | null;
+      completedAt: string | null;
+    }[];
+  }[];
+}
+
+/**
+ * Returns the user's most recent in-progress workout (completed_at IS NULL) if
+ * any, hydrated with its exercise_logs and set_logs. This is the server-side
+ * source of truth for resume — localStorage is only a cache.
+ */
+export async function getActiveWorkout(): Promise<ActiveWorkoutSnapshot | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: session } = await supabase
+    .from("workout_sessions")
+    .select("id, workout_type, muscle_groups_focus, created_at")
+    .eq("user_id", user.id)
+    .is("completed_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!session) return null;
+
+  const { data: logs } = await supabase
+    .from("exercise_logs")
+    .select(`
+      id,
+      order_index,
+      exercises:exercise_id (id, name, muscle_groups, equipment_type, is_default),
+      set_logs (set_number, target_weight, actual_weight, target_reps, actual_reps, completed_at)
+    `)
+    .eq("session_id", session.id)
+    .order("order_index", { ascending: true });
+
+  return {
+    sessionId: session.id as string,
+    split: (session.workout_type ?? null) as WorkoutSplit | null,
+    muscleGroups: (session.muscle_groups_focus ?? []) as MuscleGroup[],
+    startedAt: new Date(session.created_at).getTime(),
+    exercises: (logs ?? []).map((log: any) => ({
+      exerciseLogId: log.id as string,
+      exercise: log.exercises as Exercise,
+      sets: (log.set_logs ?? [])
+        .slice()
+        .sort((a: any, b: any) => a.set_number - b.set_number)
+        .map((s: any) => ({
+          setNumber: s.set_number as number,
+          targetWeight: s.target_weight as number | null,
+          actualWeight: s.actual_weight as number | null,
+          targetReps: s.target_reps as number | null,
+          actualReps: s.actual_reps as number | null,
+          completedAt: s.completed_at as string | null,
+        })),
+    })),
+  };
 }
 
 export async function getExerciseHistory(exerciseId: string) {

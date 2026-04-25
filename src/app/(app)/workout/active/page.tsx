@@ -14,16 +14,67 @@ import { Modal } from "@/components/ui/modal";
 import {
   createWorkoutSession,
   createExerciseLog,
-  logSet,
+  upsertSet,
   completeWorkoutSession,
   updateWorkoutDate,
   getExerciseHistory,
+  getActiveWorkout,
   deleteSetLog,
   deleteExerciseLog,
 } from "@/actions/workout";
 import { getProgressiveOverload } from "@/lib/workout-engine";
-import { ALL_SPLITS, NON_STRENGTH_SPLITS, SPLIT_GROUPS, DEFAULT_REST_TIMER } from "@/lib/constants";
-import type { Exercise, MuscleGroup, WorkoutSplit, StrengthSplit, NonStrengthSplit } from "@/lib/types";
+import { ALL_SPLITS, NON_STRENGTH_SPLITS, SPLIT_GROUPS, DEFAULT_REST_TIMER, DEFAULT_SETS_PER_EXERCISE, DEFAULT_REPS_PER_SET } from "@/lib/constants";
+import type { Exercise, MuscleGroup, WorkoutSplit, StrengthSplit, NonStrengthSplit, ActiveSet } from "@/lib/types";
+import type { ActiveWorkoutState } from "@/lib/hooks/use-active-workout";
+import type { ActiveWorkoutSnapshot } from "@/actions/workout";
+
+// Map a server-side snapshot into the reducer's ActiveWorkoutState. Progressive-
+// overload hints (previousWeight/suggestedWeight/allTimeMax) are nulled on
+// resume — the set rows themselves carry the actual logged values.
+function hydrateFromServer(snapshot: ActiveWorkoutSnapshot): ActiveWorkoutState {
+  return {
+    sessionId: snapshot.sessionId,
+    split: snapshot.split,
+    muscleGroups: snapshot.muscleGroups,
+    startedAt: snapshot.startedAt,
+    status: "active",
+    currentExerciseIndex: Math.max(0, snapshot.exercises.length - 1),
+    lastCompletedSetKey: null,
+    exercises: snapshot.exercises.map((ex) => {
+      const sets: ActiveSet[] =
+        ex.sets.length > 0
+          ? ex.sets.map((s) => ({
+              id: crypto.randomUUID(),
+              setNumber: s.setNumber,
+              targetWeight: s.targetWeight,
+              targetReps: s.targetReps,
+              actualWeight: s.actualWeight,
+              actualReps: s.actualReps,
+              isCompleted: s.completedAt != null,
+            }))
+          : Array.from({ length: DEFAULT_SETS_PER_EXERCISE }, (_, i) => ({
+              id: crypto.randomUUID(),
+              setNumber: i + 1,
+              targetWeight: null,
+              targetReps: DEFAULT_REPS_PER_SET,
+              actualWeight: null,
+              actualReps: null,
+              isCompleted: false,
+            }));
+      return {
+        exercise: ex.exercise,
+        exerciseLogId: ex.exerciseLogId,
+        sets,
+        previousWeight: null,
+        previousReps: null,
+        suggestedWeight: null,
+        shouldProgress: false,
+        progressMessage: null,
+        allTimeMax: 0,
+      };
+    }),
+  };
+}
 
 export default function ActiveWorkoutPage() {
   return (
@@ -87,15 +138,41 @@ function ActiveWorkoutContent() {
     hasInitialized.current = true;
 
     async function init() {
-      // Check for recoverable session
-      const saved = workout.getRecoverableSession();
-      if (saved) {
-        workout.restoreSession(saved);
+      // 1. Server is the source of truth — look for a dangling in-progress
+      //    workout (completed_at IS NULL) on the DB before anything else.
+      //    This survives iOS Safari tab eviction, device swap, cleared cache.
+      const localSaved = workout.getRecoverableSession();
+
+      let serverWorkout: ActiveWorkoutSnapshot | null = null;
+      try {
+        serverWorkout = await getActiveWorkout();
+      } catch {
+        // Network error — fall through to localStorage
+      }
+
+      if (serverWorkout) {
+        const hydrated = hydrateFromServer(serverWorkout);
+        // If localStorage matches this session, preserve the cursor position.
+        if (
+          localSaved &&
+          localSaved.sessionId === serverWorkout.sessionId &&
+          localSaved.currentExerciseIndex < hydrated.exercises.length
+        ) {
+          hydrated.currentExerciseIndex = localSaved.currentExerciseIndex;
+        }
+        workout.restoreSession(hydrated);
         setIsInitializing(false);
         return;
       }
 
-      // Read split from URL params
+      // 2. No server workout. Offline fallback to localStorage if present.
+      if (localSaved) {
+        workout.restoreSession(localSaved);
+        setIsInitializing(false);
+        return;
+      }
+
+      // 3. Fresh start — need a split from the URL.
       const splitParam = searchParams.get("split") as WorkoutSplit | null;
       if (!splitParam || !ALL_SPLITS.includes(splitParam)) {
         router.replace("/dashboard");
@@ -175,7 +252,7 @@ function ActiveWorkoutContent() {
     const set = exerciseState?.sets[setIndex];
 
     if (exerciseState?.exerciseLogId && set) {
-      logSet(
+      upsertSet(
         exerciseState.exerciseLogId,
         set.setNumber,
         set.targetWeight,

@@ -114,14 +114,19 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       // Auto-complete: first time EITHER actualWeight or actualReps transitions
       // from null → a number, mark the set done and fill the other field from target.
       const wasNull = prev[action.field] === null;
-      let justCompleted = false;
+      let shouldPersist = false;
       if (!prev.isCompleted && wasNull) {
         if (next.actualWeight === null) next.actualWeight = next.targetWeight;
         if (next.actualReps === null) next.actualReps = next.targetReps;
         next.isCompleted = true;
         const actualWeight = next.actualWeight ?? 0;
         next.isPR = ex.allTimeMax > 0 && actualWeight > ex.allTimeMax;
-        justCompleted = true;
+        shouldPersist = true;
+      } else if (prev.isCompleted) {
+        // Edit to an already-persisted set — re-upsert so the DB reflects the change.
+        const actualWeight = next.actualWeight ?? 0;
+        next.isPR = ex.allTimeMax > 0 && actualWeight > ex.allTimeMax;
+        shouldPersist = true;
       }
 
       sets[action.setIndex] = next;
@@ -130,8 +135,8 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       return {
         ...state,
         exercises,
-        lastCompletedSetKey: justCompleted
-          ? `${action.exerciseIndex}:${action.setIndex}`
+        lastCompletedSetKey: shouldPersist
+          ? `${action.exerciseIndex}:${action.setIndex}:${Date.now()}`
           : state.lastCompletedSetKey,
       };
     }
@@ -253,28 +258,35 @@ export function useActiveWorkout() {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // Persist to sessionStorage on every state change
+  // Persist to localStorage on every state change. localStorage (not sessionStorage)
+  // because iOS Safari evicts sessionStorage aggressively on tab/app switch, which
+  // caused real mid-workout data loss. Server DB remains the authoritative source.
   useEffect(() => {
     if (state.status === "active") {
       try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch {
         // Storage full or unavailable
       }
     } else if (state.status === "complete") {
-      sessionStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, [state]);
 
-  // Check for recoverable session on mount
+  // Check for recoverable session on mount. Stale (>24h) sessions are ignored —
+  // a dangling server-side workout is handled separately via getActiveWorkout().
   const getRecoverableSession = useCallback((): ActiveWorkoutState | null => {
     try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return null;
       const parsed = JSON.parse(saved) as ActiveWorkoutState;
-      if (parsed.status === "active" && parsed.sessionId) {
-        return parsed;
+      if (parsed.status !== "active" || !parsed.sessionId) return null;
+      const ageMs = Date.now() - (parsed.startedAt ?? 0);
+      if (ageMs > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
       }
+      return parsed;
     } catch {
       // Invalid data
     }
@@ -286,7 +298,7 @@ export function useActiveWorkout() {
   }, []);
 
   const clearSavedSession = useCallback(() => {
-    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   const addExercise = useCallback(
