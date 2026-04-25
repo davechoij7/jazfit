@@ -12,6 +12,7 @@ interface ActiveExerciseProps {
   exerciseIndex: number;
   onUpdateWeight: (setIndex: number, value: number) => void;
   onUpdateReps: (setIndex: number, value: number) => void;
+  onCompleteSet: (setIndex: number) => void;
   onDeleteSet: (setIndex: number) => void;
   onAddSet: () => void;
   onDeleteExercise: () => void;
@@ -21,6 +22,7 @@ export function ActiveExercise({
   exerciseState,
   onUpdateWeight,
   onUpdateReps,
+  onCompleteSet,
   onDeleteSet,
   onAddSet,
   onDeleteExercise,
@@ -74,6 +76,7 @@ export function ActiveExercise({
             weightStep={weightStep}
             onUpdateWeight={(v) => onUpdateWeight(i, v)}
             onUpdateReps={(v) => onUpdateReps(i, v)}
+            onComplete={() => onCompleteSet(i)}
             onDelete={() => onDeleteSet(i)}
           />
         ))}

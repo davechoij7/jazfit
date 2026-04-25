@@ -9,6 +9,7 @@ interface SetRowProps {
   weightStep?: number;
   onUpdateWeight: (value: number) => void;
   onUpdateReps: (value: number) => void;
+  onComplete: () => void;
   onDelete: () => void;
 }
 
@@ -17,7 +18,7 @@ const rowVariants = {
   idle: {},
 };
 
-export function SetRow({ set, weightStep = 5, onUpdateWeight, onUpdateReps, onDelete }: SetRowProps) {
+export function SetRow({ set, weightStep = 5, onUpdateWeight, onUpdateReps, onComplete, onDelete }: SetRowProps) {
   return (
     <motion.div
       variants={rowVariants}
@@ -70,6 +71,23 @@ export function SetRow({ set, weightStep = 5, onUpdateWeight, onUpdateReps, onDe
         >
           PR
         </motion.span>
+      )}
+
+      {/* Confirm-at-target check — only shown for incomplete sets so Jaz can
+          mark a set done at its target without bumping +/- back and forth. */}
+      {!set.isCompleted && (
+        <motion.button
+          type="button"
+          onClick={onComplete}
+          whileTap={{ scale: 0.92 }}
+          aria-label="Mark set complete"
+          className="w-12 h-12 rounded-xl bg-success/15 text-success flex items-center justify-center shrink-0
+                     active:bg-success/25 select-none touch-manipulation"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </motion.button>
       )}
 
       {/* Delete set */}

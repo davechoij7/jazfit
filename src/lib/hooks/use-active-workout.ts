@@ -154,6 +154,7 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       // If no actual values entered, use target values
       if (set.actualWeight === null) set.actualWeight = set.targetWeight;
       if (set.actualReps === null) set.actualReps = set.targetReps;
+      const wasAlreadyComplete = set.isCompleted;
       set.isCompleted = true;
 
       const actualWeight = set.actualWeight ?? 0;
@@ -162,7 +163,15 @@ function reducer(state: ActiveWorkoutState, action: Action): ActiveWorkoutState 
       sets[action.setIndex] = set;
       ex.sets = sets;
       exercises[action.exerciseIndex] = ex;
-      return { ...state, exercises };
+      return {
+        ...state,
+        exercises,
+        // Stamp a fresh key so the save effect persists this set even if it was
+        // already marked complete (re-tapping ✓ shouldn't be a silent no-op).
+        lastCompletedSetKey: wasAlreadyComplete
+          ? state.lastCompletedSetKey
+          : `${action.exerciseIndex}:${action.setIndex}:${Date.now()}`,
+      };
     }
 
     case "ADD_SET": {

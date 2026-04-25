@@ -508,6 +508,13 @@ function ActiveWorkoutContent() {
                   value,
                 })
               }
+              onCompleteSet={(setIndex) =>
+                workout.dispatch({
+                  type: "COMPLETE_SET",
+                  exerciseIndex: workout.state.currentExerciseIndex,
+                  setIndex,
+                })
+              }
               onDeleteSet={handleDeleteSet}
               onAddSet={() =>
                 workout.dispatch({
