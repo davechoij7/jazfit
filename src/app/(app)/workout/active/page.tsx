@@ -522,6 +522,10 @@ function ActiveWorkoutContent() {
                   exerciseIndex: workout.state.currentExerciseIndex,
                 })
               }
+              onRemoveLastSet={() => {
+                const lastIdx = (currentEx?.sets.length ?? 0) - 1;
+                if (lastIdx >= 0) handleDeleteSet(lastIdx);
+              }}
               onDeleteExercise={handleDeleteExercise}
             />
 

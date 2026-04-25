@@ -15,6 +15,7 @@ interface ActiveExerciseProps {
   onCompleteSet: (setIndex: number) => void;
   onDeleteSet: (setIndex: number) => void;
   onAddSet: () => void;
+  onRemoveLastSet: () => void;
   onDeleteExercise: () => void;
 }
 
@@ -25,6 +26,7 @@ export function ActiveExercise({
   onCompleteSet,
   onDeleteSet,
   onAddSet,
+  onRemoveLastSet,
   onDeleteExercise,
 }: ActiveExerciseProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -82,10 +84,20 @@ export function ActiveExercise({
         ))}
       </div>
 
-      {/* Add set button */}
-      <Button variant="ghost" size="sm" onClick={onAddSet} className="w-full">
-        + Add Set
-      </Button>
+      {/* Add / remove set buttons. "Remove Last" handles trailing extras
+          regardless of completion state — incomplete sets in the middle of a
+          list can be left blank (they don't write to the DB), and completed
+          sets in the middle still expose their own trash on the row. */}
+      <div className="flex gap-2">
+        <Button variant="ghost" size="sm" onClick={onAddSet} className="flex-1">
+          + Add Set
+        </Button>
+        {sets.length > 1 && (
+          <Button variant="ghost" size="sm" onClick={onRemoveLastSet} className="flex-1">
+            − Remove Last
+          </Button>
+        )}
+      </div>
 
       <Modal isOpen={confirmOpen} onClose={() => setConfirmOpen(false)} title="Delete exercise?">
         <p className="text-sm text-text-muted mb-6">
