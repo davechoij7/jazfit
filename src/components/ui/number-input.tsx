@@ -32,25 +32,25 @@ export function NumberInput({
   };
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      {label && <span className="text-xs text-text-dim tracking-wide">{label}</span>}
-      <div className="flex items-center gap-1">
+    <div className="flex flex-col items-center gap-0.5 min-w-0">
+      {label && <span className="text-[10px] text-text-dim tracking-wide">{label}</span>}
+      <div className="flex items-center gap-0.5">
         <button
           type="button"
           onClick={decrement}
-          className="w-10 h-10 rounded-lg bg-bg-elevated text-text-primary text-xl font-bold
+          className="w-8 h-10 rounded-lg bg-bg-elevated text-text-primary text-lg font-bold
                      flex items-center justify-center active:bg-bg-card select-none touch-manipulation"
         >
-          -
+          −
         </button>
-        <div className="w-16 h-10 rounded-lg bg-bg-elevated flex items-center justify-center">
-          <span className="text-lg font-bold text-text-primary tabular-nums">{displayValue}</span>
-          {unit && <span className="text-xs text-text-dim ml-0.5">{unit}</span>}
+        <div className="w-10 h-10 rounded-lg bg-bg-elevated flex items-center justify-center">
+          <span className="text-base font-bold text-text-primary tabular-nums">{displayValue}</span>
+          {unit && <span className="text-[10px] text-text-dim ml-0.5">{unit}</span>}
         </div>
         <button
           type="button"
           onClick={increment}
-          className="w-10 h-10 rounded-lg bg-bg-elevated text-text-primary text-xl font-bold
+          className="w-8 h-10 rounded-lg bg-bg-elevated text-text-primary text-lg font-bold
                      flex items-center justify-center active:bg-bg-card select-none touch-manipulation"
         >
           +
