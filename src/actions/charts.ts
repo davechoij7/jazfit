@@ -120,10 +120,9 @@ export async function getChartsData(): Promise<ChartsData> {
     }
   }
 
-  // Sort exercises by session count desc, take top 10 for the picker
+  // Sort exercises by session count desc; the picker strip scrolls horizontally
   const exerciseNames = Object.keys(exerciseSessionCount)
-    .sort((a, b) => exerciseSessionCount[b] - exerciseSessionCount[a])
-    .slice(0, 10);
+    .sort((a, b) => exerciseSessionCount[b] - exerciseSessionCount[a]);
 
   // Build ordered frequency data (all weeks in chronological order)
   const allWeeks = Array.from(
