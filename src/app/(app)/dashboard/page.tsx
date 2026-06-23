@@ -25,7 +25,7 @@ export default async function DashboardPage() {
       .eq("user_id", user!.id)
       .not("completed_at", "is", null)
       .order("date", { ascending: false })
-      .gte("date", daysAgoInLA(14)),
+      .gte("date", daysAgoInLA(365)),
     getUnseenSticker(),
     getActiveWorkout(),
   ]);

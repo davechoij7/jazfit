@@ -6,7 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ALL_SPLITS, SPLIT_ICONS, SPLIT_IMAGES } from "@/lib/constants";
 import type { WorkoutSplit } from "@/lib/types";
-import { WorkoutHistoryRow } from "@/components/workout/workout-history-row";
+import { MonthCalendar } from "@/components/workout/month-calendar";
 import { StickerAnimation } from "@/components/workout/sticker-animation";
 import type { DailySticker } from "@/lib/types";
 
@@ -250,8 +250,8 @@ export function DashboardContent({
         )}
       </div>
 
-      {/* Workout history row */}
-      <WorkoutHistoryRow sessions={recentSessions} />
+      {/* Month calendar — tap a past day to log a workout, tap a workout to view it */}
+      <MonthCalendar sessions={recentSessions} />
     </div>
   );
 }

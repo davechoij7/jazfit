@@ -41,26 +41,38 @@ function hydrateFromServer(snapshot: ActiveWorkoutSnapshot): ActiveWorkoutState 
     currentExerciseIndex: Math.max(0, snapshot.exercises.length - 1),
     lastCompletedSetKey: null,
     exercises: snapshot.exercises.map((ex) => {
-      const sets: ActiveSet[] =
-        ex.sets.length > 0
-          ? ex.sets.map((s) => ({
-              id: crypto.randomUUID(),
-              setNumber: s.setNumber,
-              targetWeight: s.targetWeight,
-              targetReps: s.targetReps,
-              actualWeight: s.actualWeight,
-              actualReps: s.actualReps,
-              isCompleted: s.completedAt != null,
-            }))
-          : Array.from({ length: DEFAULT_SETS_PER_EXERCISE }, (_, i) => ({
-              id: crypto.randomUUID(),
-              setNumber: i + 1,
-              targetWeight: null,
-              targetReps: DEFAULT_REPS_PER_SET,
-              actualWeight: null,
-              actualReps: null,
-              isCompleted: false,
-            }));
+      // Persisted sets are the *completed* ones (only completed sets hit the DB).
+      const dbSets: ActiveSet[] = ex.sets.map((s) => ({
+        id: crypto.randomUUID(),
+        setNumber: s.setNumber,
+        targetWeight: s.targetWeight,
+        targetReps: s.targetReps,
+        actualWeight: s.actualWeight,
+        actualReps: s.actualReps,
+        isCompleted: s.completedAt != null,
+      }));
+
+      // Pad back up to the default set count with incomplete preset sets so the
+      // untouched sets she expects don't vanish on reload (iOS Safari evicting
+      // the tab mid-workout). Seed targets from the last logged set — i.e. the
+      // weight she just lifted carries to the remaining presets.
+      const lastSet = dbSets[dbSets.length - 1];
+      const presetWeight = lastSet ? lastSet.actualWeight ?? lastSet.targetWeight : null;
+      const presetReps = lastSet ? lastSet.actualReps ?? lastSet.targetReps : DEFAULT_REPS_PER_SET;
+
+      const sets: ActiveSet[] = [...dbSets];
+      for (let i = dbSets.length; i < DEFAULT_SETS_PER_EXERCISE; i++) {
+        sets.push({
+          id: crypto.randomUUID(),
+          setNumber: i + 1,
+          targetWeight: presetWeight,
+          targetReps: presetReps,
+          actualWeight: null,
+          actualReps: null,
+          isCompleted: false,
+        });
+      }
+
       return {
         exercise: ex.exercise,
         exerciseLogId: ex.exerciseLogId,
@@ -105,6 +117,9 @@ function ActiveWorkoutContent() {
   const [notes, setNotes] = useState("");
   const [elapsedDisplay, setElapsedDisplay] = useState("0:00");
   const [workoutDate, setWorkoutDate] = useState(() => {
+    // Backdated entry from the home calendar passes ?date=YYYY-MM-DD.
+    const param = searchParams.get("date");
+    if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) return param;
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   });
@@ -187,9 +202,8 @@ function ActiveWorkoutContent() {
       // row that makes Resume Workout appear forever with nothing to resume.
       let sessionId: string | null = null;
       if (isNonStrengthInit) {
-        const now = new Date();
-        const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-        sessionId = await createWorkoutSession(muscleGroups, splitParam, localDate);
+        // workoutDate honors the ?date= param (backdated) or defaults to today.
+        sessionId = await createWorkoutSession(muscleGroups, splitParam, workoutDate);
       }
 
       // Initialize empty workout
