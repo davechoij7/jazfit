@@ -28,15 +28,23 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
 
   // iOS Safari shrinks only the *visual* viewport when the keyboard opens, so a
   // `fixed bottom-0` sheet stays anchored behind the keyboard and the Save button
-  // becomes unreachable. Track the keyboard overlap and lift the sheet above it.
+  // becomes unreachable. Track the keyboard height and lift the sheet above it.
+  //
+  // `position: fixed` anchors to the *layout* viewport, so the keyboard height is
+  // simply `innerHeight - visualViewport.height` — independent of how far iOS has
+  // panned to reveal a focused field. (Subtracting offsetTop here is wrong: it
+  // collapses the inset to ~0 on the lower fields, dropping the sheet back behind
+  // the keyboard.) maxHeight is clamped to the visible height so the form scrolls.
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const [visibleHeight, setVisibleHeight] = useState<number | null>(null);
 
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
     const update = () => {
-      const overlap = window.innerHeight - vv.height - vv.offsetTop;
-      setKeyboardInset(Math.max(0, Math.round(overlap)));
+      const keyboard = Math.max(0, Math.round(window.innerHeight - vv.height));
+      setKeyboardInset(keyboard);
+      setVisibleHeight(keyboard > 0 ? Math.round(vv.height) : null);
     };
     update();
     vv.addEventListener("resize", update);
@@ -117,9 +125,7 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
           background: "#FBF0F0",
           bottom: keyboardInset,
           maxHeight:
-            keyboardInset > 0
-              ? `calc(100dvh - ${keyboardInset}px - 24px)`
-              : "90dvh",
+            visibleHeight != null ? `${visibleHeight - 24}px` : "90dvh",
           paddingBottom:
             keyboardInset > 0 ? 16 : "max(env(safe-area-inset-bottom), 24px)",
         }}
