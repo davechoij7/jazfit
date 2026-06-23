@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { logMeasurement } from "@/actions/measurements";
+import { useKeyboardInset } from "@/lib/hooks/use-keyboard-inset";
 
 interface MeasurementFormProps {
   onClose: () => void;
@@ -26,34 +27,8 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // iOS Safari shrinks only the *visual* viewport when the keyboard opens, so a
-  // `fixed bottom-0` sheet stays anchored behind the keyboard and the Save button
-  // becomes unreachable. Track the keyboard height and lift the sheet above it.
-  //
-  // `position: fixed` anchors to the *layout* viewport, so the keyboard height is
-  // simply `innerHeight - visualViewport.height` — independent of how far iOS has
-  // panned to reveal a focused field. (Subtracting offsetTop here is wrong: it
-  // collapses the inset to ~0 on the lower fields, dropping the sheet back behind
-  // the keyboard.) maxHeight is clamped to the visible height so the form scrolls.
-  const [keyboardInset, setKeyboardInset] = useState(0);
-  const [visibleHeight, setVisibleHeight] = useState<number | null>(null);
-
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const update = () => {
-      const keyboard = Math.max(0, Math.round(window.innerHeight - vv.height));
-      setKeyboardInset(keyboard);
-      setVisibleHeight(keyboard > 0 ? Math.round(vv.height) : null);
-    };
-    update();
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
-  }, []);
+  // Lift the sheet above the iOS keyboard so the Save button stays reachable.
+  const { keyboardInset, visibleHeight } = useKeyboardInset();
 
   const [weight, setWeight] = useState("");
   const [waist, setWaist] = useState("");

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useKeyboardInset } from "@/lib/hooks/use-keyboard-inset";
 
 interface ModalProps {
   isOpen: boolean;
@@ -14,6 +15,9 @@ interface ModalProps {
 export function Modal({ isOpen, onClose, children, title, footer }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  // Push the bottom-anchored sheet above the iOS keyboard so its content/actions
+  // (e.g. the "Create Exercise" form's Save button) don't end up behind it.
+  const { keyboardInset, visibleHeight } = useKeyboardInset();
 
   useEffect(() => {
     setMounted(true);
@@ -36,12 +40,16 @@ export function Modal({ isOpen, onClose, children, title, footer }: ModalProps) 
     <div
       ref={overlayRef}
       className="fixed inset-0 z-[60] flex items-end justify-center"
+      style={{ paddingBottom: keyboardInset }}
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
       <div className="absolute inset-0 bg-[#2D1A20]/40 backdrop-blur-sm" />
-      <div className="relative w-full max-w-lg bg-bg-card rounded-t-3xl border-t border-border animate-slide-up flex flex-col max-h-[90dvh]">
+      <div
+        className="relative w-full max-w-lg bg-bg-card rounded-t-3xl border-t border-border animate-slide-up flex flex-col max-h-[90dvh]"
+        style={visibleHeight != null ? { maxHeight: `${visibleHeight - 24}px` } : undefined}
+      >
         {/* Drag handle + close button row */}
         <div className="shrink-0 flex items-center justify-between pt-3 pb-2 px-4">
           <div className="w-10 h-1 rounded-full bg-text-dim mx-auto" />
