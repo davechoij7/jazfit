@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { logMeasurement } from "@/actions/measurements";
 
@@ -25,6 +25,27 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // iOS Safari shrinks only the *visual* viewport when the keyboard opens, so a
+  // `fixed bottom-0` sheet stays anchored behind the keyboard and the Save button
+  // becomes unreachable. Track the keyboard overlap and lift the sheet above it.
+  const [keyboardInset, setKeyboardInset] = useState(0);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const overlap = window.innerHeight - vv.height - vv.offsetTop;
+      setKeyboardInset(Math.max(0, Math.round(overlap)));
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   const [weight, setWeight] = useState("");
   const [waist, setWaist] = useState("");
@@ -91,10 +112,16 @@ export function MeasurementForm({ onClose }: MeasurementFormProps) {
     >
       {/* Bottom sheet — stop propagation so tapping inside doesn't close */}
       <div
-        className="fixed bottom-0 left-0 right-0 rounded-t-3xl overflow-y-auto max-h-[90dvh]"
+        className="fixed left-0 right-0 rounded-t-3xl overflow-y-auto"
         style={{
           background: "#FBF0F0",
-          paddingBottom: "max(env(safe-area-inset-bottom), 24px)",
+          bottom: keyboardInset,
+          maxHeight:
+            keyboardInset > 0
+              ? `calc(100dvh - ${keyboardInset}px - 24px)`
+              : "90dvh",
+          paddingBottom:
+            keyboardInset > 0 ? 16 : "max(env(safe-area-inset-bottom), 24px)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
